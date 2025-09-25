@@ -5,7 +5,7 @@ const BASE_URL= process.env.NEXT_PUBLIC_BASE_URL;
 //Register New User
 export const registerUser= async (userData: {email: string, firstname: string, lastname: string, password : string, role:string})=>{
     try{
-        const response = await axios.post(`${BASE_URL}/ /api/auth/register`, userData);
+        const response = await axios.post(`${BASE_URL}/api/auth/register`, userData);
         return response.data;
 
     }catch(error){
@@ -32,17 +32,6 @@ export const loginUser = async (loginData: {email:string , password : string})=>
         return response.data;
     }catch(error){
         window.alert("Login failed. Please try again.");
-        return null;
-    }
-}
-
-
-export const getAllVehicles = async ()=>{
-    try{
-        const response = await axios.get(`${BASE_URL}/api/vehicles`);
-        return response.data;
-    }catch(error){
-        window.alert("Fetching vehicles failed. Please try again.");
         return null;
     }
 }

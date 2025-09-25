@@ -3,6 +3,8 @@
 import { FormEvent, useState } from "react";
 import SignUp from "./SignUp";
 import { loginUser } from "@/app/services/UserRegisterAndLoginServices";
+import Cookies from "js-cookie";
+import {useRouter} from "next/navigation";
 
 type View = "intro" | "login" | "signup";
 
@@ -11,7 +13,20 @@ export default function Login() {
 	const [username, setUsername] = useState("");
 	const [password, setPassword] = useState("");
 	const [message, setMessage] = useState<string | null>(null);
+	const router= useRouter();
 
+	const redirectUser = (role:string)=>{
+		if(role==="Admin"){
+			router.push("/admin/dashboard");
+		}else if (role==="Customer"){
+			router.push("/customer/dashboard");
+		}else if (role==="Employee"){
+			router.push("/employee/dashboard");
+		}else{
+			router.push("/");
+		}
+	}
+	
 	const handleLogin = async  (e: FormEvent) => {
 		e.preventDefault();
 		if (!username || !password) {
@@ -28,6 +43,11 @@ export default function Login() {
 			const response = await loginUser(loginData);
 			if (response.success) {
 				setMessage("Login Successful! ");
+				Cookies.set("authtoken", response.token,{expires:1});
+				Cookies.set("userrole", response.role);
+				Cookies.set("firstname", response.firstName);
+				Cookies.set("lastname", response.lastName);
+				redirectUser(response.role);
 			} else {
 				setMessage("Login failed. Please try again.");
 			}
