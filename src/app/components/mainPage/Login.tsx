@@ -2,6 +2,7 @@
 
 import { FormEvent, useState } from "react";
 import SignUp from "./SignUp";
+import { loginUser } from "@/app/services/UserRegisterAndLoginServices";
 
 type View = "intro" | "login" | "signup";
 
@@ -11,14 +12,30 @@ export default function Login() {
 	const [password, setPassword] = useState("");
 	const [message, setMessage] = useState<string | null>(null);
 
-	const handleLogin = (e: FormEvent) => {
+	const handleLogin = async  (e: FormEvent) => {
 		e.preventDefault();
-		// Demo only — no real auth. Provide a friendly message.
 		if (!username || !password) {
 			setMessage("Please enter both username and password.");
 			return;
 		}
-		setMessage("Attempting to log in… (demo)");
+		setMessage("Attempting to log in…");
+		const loginData={
+			email: username,
+			password
+		}
+
+		try{
+			const response = await loginUser(loginData);
+			if (response.success) {
+				setMessage("Login Successful! ");
+			} else {
+				setMessage("Login failed. Please try again.");
+			}
+		}catch(error){
+			window.alert("Login failed. Please try again.");
+			setMessage("An error occurred. Please try again.");
+		}
+		
 	};
 
 	if (view === "signup") {

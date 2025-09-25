@@ -1,6 +1,16 @@
 "use client";
 
 import { FormEvent, useState } from "react";
+import { registerUser,sendOtp} from "@/app/services/UserRegisterAndLoginServices";
+// Using App Router navigation
+import { useRouter } from "next/navigation";
+import Button from "@mui/material/Button";
+import Dialog from "@mui/material/Dialog";
+import DialogActions from "@mui/material/DialogActions";
+import DialogContent from "@mui/material/DialogContent";
+import DialogContentText from "@mui/material/DialogContentText";
+import DialogTitle from "@mui/material/DialogTitle";
+import TextField from "@mui/material/TextField";
 
 type Props = {
 	onBackToLogin?: () => void;
@@ -15,8 +25,14 @@ export default function SignUp({ onBackToLogin }: Props) {
 	const [password, setPassword] = useState("");
 	const [confirmPassword, setConfirmPassword] = useState("");
 	const [message, setMessage] = useState<string | null>(null);
+	// OTP dialog state
+	const [otpOpen, setOtpOpen] = useState(false);
+	const [otpCode, setOtpCode] = useState("");
+	const [otpError, setOtpError] = useState<string | null>(null);
+	const [activated, setActivated] = useState(false);
+	const router = useRouter(); //use the router to push the app to LogIn after registered
 
-	const handleSubmit = (e: FormEvent) => {
+	const handleSubmit = async (e: FormEvent) => {
 		e.preventDefault();
 		if (!firstName || !lastName || !email || !dob || !gender || !password || !confirmPassword) {
 			setMessage("Please fill in all fields.");
@@ -26,7 +42,52 @@ export default function SignUp({ onBackToLogin }: Props) {
 			setMessage("Passwords do not match.");
 			return;
 		}
-		setMessage("Registering… (demo)");
+		setMessage("Registering…");
+
+		const userData={
+			email,
+			firstname: firstName,
+			lastname: lastName,
+			password,
+			role: "Customer"
+		};
+			try{
+				const result = await registerUser(userData);
+			if (result.success) {
+				setMessage("Registration successful! Please verify via OTP.");
+				// Open OTP dialog instead of navigating back immediately
+				setOtpOpen(true);
+			} else {
+				setMessage("Registration failed. Please try again.");
+			}
+			}catch(error){
+				window.alert("Registration failed. Please try again.");
+				setMessage("An error occurred. Please try again.");
+			}
+	};
+
+	const handleActivate = async () => {
+		const code = otpCode.trim();
+		if (code.length !== 6) {
+			setOtpError("OTP must be 6 characters.");
+			return;
+		}
+		setOtpError(null);
+		try {
+			const result = await sendOtp(code); // treat sendOtp as verify (rename later if needed)
+			if (result.success) {
+				setActivated(true);
+				setMessage("Account activated! Redirecting to login...");
+				setTimeout(() => {
+					setOtpOpen(false);
+					router.push("/"); // root renders Login component
+				}, 1000);
+			} else {
+				setOtpError("Invalid OTP. Please try again.");
+			}
+		} catch (error) {
+			setOtpError("Verification failed. Please try again.");
+		}
 	};
 
 	return (
@@ -142,6 +203,59 @@ export default function SignUp({ onBackToLogin }: Props) {
 					</div>
 				</form>
 			</div>
+
+			{/* OTP Verification Dialog */}
+			<Dialog
+				open={otpOpen}
+				onClose={() => {
+					// Prevent closing if not activated yet; allow only if activated or user has not started typing
+					if (!activated) return;
+					setOtpOpen(false);
+				}}
+				aria-labelledby="otp-dialog-title"
+				aria-describedby="otp-dialog-description"
+			>
+				<DialogTitle id="otp-dialog-title" className="font-semibold">
+					Account Verification
+				</DialogTitle>
+				<DialogContent>
+					<DialogContentText id="otp-dialog-description" className="mb-4">
+						Enter the 6-digit OTP code sent to your email (<span className="font-medium">{email || "your email"}</span>) to activate your account.
+					</DialogContentText>
+					<TextField
+						label="OTP Code"
+						fullWidth
+						value={otpCode}
+						onChange={(e) => setOtpCode(e.target.value)}
+						placeholder="123456"
+						inputProps={{ maxLength: 6 }}
+						error={!!otpError}
+						helperText={otpError || ""}
+						disabled={activated}
+					/>
+					{activated && (
+						<p className="mt-3 text-sm text-green-600 font-medium">Account activated! Redirecting…</p>
+					)}
+				</DialogContent>
+				<DialogActions className="px-6 pb-4">
+					<Button
+						variant="outlined"
+						onClick={() => {
+							if (activated) setOtpOpen(false);
+						}}
+						disabled={!activated}
+					>
+						Close
+					</Button>
+					<Button
+						variant="contained"
+						onClick={handleActivate}
+						disabled={activated}
+					>
+						Activate My Account
+					</Button>
+				</DialogActions>
+			</Dialog>
 		</div>
 	);
 }
