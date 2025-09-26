@@ -16,47 +16,42 @@ export default function Login() {
 	const router= useRouter();
 
 	const redirectUser = (role:string)=>{
-		if(role==="Admin"){
-			router.push("/admin/dashboard");
-		}else if (role==="Customer"){
-			router.push("/customer/dashboard");
-		}else if (role==="Employee"){
-			router.push("/employee/dashboard");
+		if(role==="ADMIN"){
+			router.push("/admin");
+		}else if (role==="CUSTOMER"){
+			router.push("/customer");
+		}else if (role==="EMPLOYEE"){
+			router.push("/employee");
 		}else{
 			router.push("/");
 		}
 	}
 	
-	const handleLogin = async  (e: FormEvent) => {
+	const handleLogin = async (e: FormEvent) => {
 		e.preventDefault();
 		if (!username || !password) {
 			setMessage("Please enter both username and password.");
 			return;
 		}
-		setMessage("Attempting to log in…");
-		const loginData={
-			email: username,
-			password
-		}
 
-		try{
+		setMessage("Attempting to log in…");
+		const loginData = { email: username, password };
+
+		try {
 			const response = await loginUser(loginData);
-			if (response.success) {
-				setMessage("Login Successful! ");
-				Cookies.set("authtoken", response.token,{expires:1});
-				Cookies.set("userrole", response.role);
-				Cookies.set("firstname", response.firstName);
-				Cookies.set("lastname", response.lastName);
-				redirectUser(response.role);
+
+			if (response && response.token) {
+			setMessage("Login Successful!");
+			console.log("Login role:", response.role);
+			redirectUser(response.role);
 			} else {
-				setMessage("Login failed. Please try again.");
+			setMessage("Login failed. Please try again.");
 			}
-		}catch(error){
-			window.alert("Login failed. Please try again.");
+		} catch (error) {
 			setMessage("An error occurred. Please try again.");
 		}
-		
-	};
+		};
+
 
 	if (view === "signup") {
 		return (

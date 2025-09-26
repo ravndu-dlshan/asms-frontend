@@ -24,7 +24,10 @@ export default function SignUp({ onBackToLogin }: Props) {
 	const [gender, setGender] = useState("");
 	const [password, setPassword] = useState("");
 	const [confirmPassword, setConfirmPassword] = useState("");
+	const [role, setRole] = useState("");
 	const [message, setMessage] = useState<string | null>(null);
+
+
 	// OTP dialog state
 	const [otpOpen, setOtpOpen] = useState(false);
 	const [otpCode, setOtpCode] = useState("");
@@ -46,12 +49,13 @@ export default function SignUp({ onBackToLogin }: Props) {
 
 		const userData={
 			email,
-			firstname: firstName,
-			lastname: lastName,
+			firstName: firstName,
+			lastName: lastName,
 			password,
-			role: "Customer"
+			role: role
 		};
 			try{
+				console.log(userData);
 				const result = await registerUser(userData);
 			if (result.success) {
 				setMessage("Registration successful! Please verify via OTP.");
@@ -61,7 +65,6 @@ export default function SignUp({ onBackToLogin }: Props) {
 				setMessage("Registration failed. Please try again.");
 			}
 			}catch(error){
-				window.alert("Registration failed. Please try again.");
 				setMessage("An error occurred. Please try again.");
 			}
 	};
@@ -146,6 +149,18 @@ export default function SignUp({ onBackToLogin }: Props) {
 							placeholder="john.doe@example.com"
 							className="mt-1 w-full rounded-lg border border-gray-300 bg-white px-3 py-2 text-gray-900 placeholder:text-gray-400 shadow-sm focus:border-blue-500 focus:ring-2 focus:ring-blue-200"
 						/>
+					</div>
+					<div>
+						<label className="block text-sm font-medium text-gray-700" htmlFor="role">Role</label>
+						<select
+							id="role"
+							value={role}
+							onChange={(e) => setRole(e.target.value)}
+							className="mt-1 w-full rounded-lg border border-gray-300 bg-white px-3 py-2 text-gray-900 shadow-sm focus:border-blue-500 focus:ring-2 focus:ring-blue-200"
+						>
+							<option value="Customer">Customer</option>
+							<option value="Admin">Admin</option>
+						</select>
 					</div>
 					<div>
 						<label className="block text-sm font-medium text-gray-700" htmlFor="dob">Date of Birth</label>
