@@ -41,14 +41,22 @@ export default function Login() {
 			const response = await loginUser(loginData);
 
 			if (response && response.token) {
-			setMessage("Login Successful!");
-			console.log("Login role:", response.role);
-			redirectUser(response.role);
+				setMessage("Login Successful!");
+				localStorage.setItem(
+					"userInfo",
+					JSON.stringify({
+					firstName: response.firstName,
+					lastName: response.lastName,
+					email: response.email,
+					role: response.role,
+					})
+				);
+				redirectUser(response.role);
 			} else {
-			setMessage("Login failed. Please try again.");
+				setMessage("Login failed. Please try again.");
 			}
 		} catch (error) {
-			setMessage("An error occurred. Please try again.");
+				setMessage("An error occurred. Please try again.");
 		}
 		};
 
