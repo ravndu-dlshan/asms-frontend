@@ -17,7 +17,7 @@ export const registerUser= async (userData: {email: string, firstName: string, l
 //SendOtp For Verification
 export const sendOtp = async (otpCode:string)=>{
     try{
-        const response = await axios.post(`${BASE_URL}/api/auth/verify-otp`,  otpCode );
+        const response = await axios.post(`${BASE_URL}/api/auth/verify-otp`,  {otpCode} );
         return response.data;
     }catch(error){
         window.alert("OTP verification failed. Please try again.");

@@ -37,7 +37,7 @@ export default function SignUp({ onBackToLogin }: Props) {
 
 	const handleSubmit = async (e: FormEvent) => {
 		e.preventDefault();
-		if (!firstName || !lastName || !email || !dob || !gender || !password || !confirmPassword) {
+		if (!firstName || !lastName || !email || !dob || !gender || !role || !password || !confirmPassword) {
 			setMessage("Please fill in all fields.");
 			return;
 		}
@@ -59,7 +59,6 @@ export default function SignUp({ onBackToLogin }: Props) {
 				const result = await registerUser(userData);
 			if (result.success) {
 				setMessage("Registration successful! Please verify via OTP.");
-				// Open OTP dialog instead of navigating back immediately
 				setOtpOpen(true);
 			} else {
 				setMessage("Registration failed. Please try again.");
@@ -77,18 +76,19 @@ export default function SignUp({ onBackToLogin }: Props) {
 		}
 		setOtpError(null);
 		try {
-			const result = await sendOtp(code); // treat sendOtp as verify (rename later if needed)
+			const result = await sendOtp(code); 
 			if (result.success) {
 				setActivated(true);
 				setMessage("Account activated! Redirecting to login...");
 				setTimeout(() => {
 					setOtpOpen(false);
-					router.push("/"); // root renders Login component
+					router.push("/login"); 
 				}, 1000);
 			} else {
 				setOtpError("Invalid OTP. Please try again.");
 			}
 		} catch (error) {
+			console.log(error);
 			setOtpError("Verification failed. Please try again.");
 		}
 	};
@@ -158,6 +158,7 @@ export default function SignUp({ onBackToLogin }: Props) {
 							onChange={(e) => setRole(e.target.value)}
 							className="mt-1 w-full rounded-lg border border-gray-300 bg-white px-3 py-2 text-gray-900 shadow-sm focus:border-blue-500 focus:ring-2 focus:ring-blue-200"
 						>
+							<option value="">Select…</option>
 							<option value="Customer">Customer</option>
 							<option value="Admin">Admin</option>
 						</select>
