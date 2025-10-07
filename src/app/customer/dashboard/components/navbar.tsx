@@ -1,0 +1,226 @@
+'use client';
+
+import { useState } from 'react';
+import Link from 'next/link';
+import { Phone, ChevronDown, X, Menu } from 'lucide-react';
+
+export default function Navbar() {
+    const [servicesOpen, setServicesOpen] = useState(false);
+    const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
+    const [mobileServicesOpen, setMobileServicesOpen] = useState(false);
+
+    const closeMobileMenu = () => {
+        setMobileMenuOpen(false);
+        setMobileServicesOpen(false);
+    };
+
+    return (
+        <>
+            <nav className="bg-[#1a1a1a] text-white py-4 px-6">
+                <div className="max-w-7xl mx-auto flex items-center justify-between">
+                    {/* Logo */}
+                    <Link href="/" className="flex items-center">
+                        <div className="w-10 h-10 bg-gradient-to-r from-orange-500 to-orange-600 rounded-lg flex items-center justify-center mr-2">
+                            <svg className="w-5 h-5 text-white" fill="currentColor" viewBox="0 0 24 24">
+                                <path d="M18.92 6.01C18.72 5.42 18.16 5 17.5 5h-11c-.66 0-1.22.42-1.42 1.01L3 12v8c0 .55.45 1 1 1h1c.55 0 1-.45 1-1v-1h12v1c0 .55.45 1 1 1h1c.55 0 1-.45 1-1v-8l-2.08-5.99zM6.5 16c-.83 0-1.5-.67-1.5-1.5S5.67 13 6.5 13s1.5.67 1.5 1.5S7.33 16 6.5 16zm11 0c-.83 0-1.5-.67-1.5-1.5s.67-1.5 1.5-1.5 1.5.67 1.5 1.5-.67 1.5-1.5 1.5zM5 11l1.5-4.5h11L19 11H5z" />
+                            </svg>
+                        </div>
+                        <h2 className="text-2xl font-bold text-white">
+                            Car<span className="text-orange-500">vo</span>
+                        </h2>
+                    </Link>
+
+                    {/* Desktop Navigation Links */}
+                    <div className="hidden md:flex items-center space-x-8">
+                        <Link
+                            href="/"
+                            className="text-orange-500 hover:text-orange-400 transition-colors uppercase text-sm font-medium"
+                        >
+                            Home
+                        </Link>
+
+                        <Link
+                            href="/about"
+                            className="hover:text-orange-500 transition-colors uppercase text-sm font-medium"
+                        >
+                            About
+                        </Link>
+
+                        {/* Services Dropdown */}
+                        <div
+                            className="relative group"
+                            onMouseEnter={() => setServicesOpen(true)}
+                            onMouseLeave={() => setServicesOpen(false)}
+                        >
+                            <button className="flex items-center gap-1 hover:text-orange-500 transition-colors uppercase text-sm font-medium">
+                                Services
+                                <ChevronDown className="w-4 h-4" />
+                            </button>
+                            {servicesOpen && (
+                                <div className="absolute top-full left-0 pt-2 w-48 z-50">
+                                    <div className="bg-[#2a2a2a] rounded shadow-lg py-2">
+                                        <Link href="/services/repair" className="block px-4 py-2 hover:bg-orange-500 transition-colors text-sm">
+                                            Repair Services
+                                        </Link>
+                                        <Link href="/services/maintenance" className="block px-4 py-2 hover:bg-orange-500 transition-colors text-sm">
+                                            Maintenance
+                                        </Link>
+                                        <Link href="/services/diagnostics" className="block px-4 py-2 hover:bg-orange-500 transition-colors text-sm">
+                                            Diagnostics
+                                        </Link>
+                                    </div>
+                                </div>
+                            )}
+                        </div>
+
+                        <Link
+                            href="/shop"
+                            className="hover:text-orange-500 transition-colors uppercase text-sm font-medium"
+                        >
+                            Shop
+                        </Link>
+
+                        <Link
+                            href="/contacts"
+                            className="hover:text-orange-500 transition-colors uppercase text-sm font-medium"
+                        >
+                            Contacts
+                        </Link>
+                    </div>
+
+                    {/* Phone Button - Desktop */}
+                    <Link
+                        href="tel:+9441225678"
+                        className="hidden md:flex items-center gap-2 bg-transparent border border-white rounded-full px-5 py-2 hover:bg-orange-500 hover:border-orange-500 transition-all"
+                    >
+                        <Phone className="w-4 h-4" />
+                        <span className="text-sm font-medium">+94 412 25 678</span>
+                    </Link>
+
+                    {/* Mobile Menu Button */}
+                    <button 
+                        className="md:hidden text-white z-50"
+                        onClick={() => setMobileMenuOpen(!mobileMenuOpen)}
+                    >
+                        {mobileMenuOpen ? <X className="w-6 h-6" /> : <Menu className="w-6 h-6" />}
+                    </button>
+                </div>
+            </nav>
+
+            {/* Mobile Overlay */}
+            {mobileMenuOpen && (
+                <div 
+                    className="fixed inset-0 bg-black bg-opacity-50 z-40 md:hidden"
+                    onClick={closeMobileMenu}
+                />
+            )}
+
+            {/* Mobile Sidebar */}
+            <div 
+                className={`fixed top-0 right-0 h-full w-80 bg-[#1a1a1a] text-white z-50 transform transition-transform duration-300 ease-in-out md:hidden ${
+                    mobileMenuOpen ? 'translate-x-0' : 'translate-x-full'
+                }`}
+            >
+                {/* Sidebar Header */}
+                <div className="flex items-center justify-between p-6 border-b border-gray-700">
+                    <div className="flex items-center">
+                        <div className="w-10 h-10 bg-gradient-to-r from-orange-500 to-orange-600 rounded-lg flex items-center justify-center mr-2">
+                            <svg className="w-5 h-5 text-white" fill="currentColor" viewBox="0 0 24 24">
+                                <path d="M18.92 6.01C18.72 5.42 18.16 5 17.5 5h-11c-.66 0-1.22.42-1.42 1.01L3 12v8c0 .55.45 1 1 1h1c.55 0 1-.45 1-1v-1h12v1c0 .55.45 1 1 1h1c.55 0 1-.45 1-1v-8l-2.08-5.99zM6.5 16c-.83 0-1.5-.67-1.5-1.5S5.67 13 6.5 13s1.5.67 1.5 1.5S7.33 16 6.5 16zm11 0c-.83 0-1.5-.67-1.5-1.5s.67-1.5 1.5-1.5 1.5.67 1.5 1.5-.67 1.5-1.5 1.5zM5 11l1.5-4.5h11L19 11H5z" />
+                            </svg>
+                        </div>
+                        <h2 className="text-xl font-bold text-white">
+                            Car<span className="text-orange-500">vo</span>
+                        </h2>
+                    </div>
+                    <button onClick={closeMobileMenu}>
+                        <X className="w-6 h-6" />
+                    </button>
+                </div>
+
+                {/* Sidebar Menu Items */}
+                <div className="overflow-y-auto h-[calc(100%-80px)] p-6">
+                    <div className="space-y-2">
+                        <Link
+                            href="/"
+                            className="block px-4 py-3 text-orange-500 hover:bg-[#2a2a2a] transition-colors uppercase text-sm font-medium rounded"
+                            onClick={closeMobileMenu}
+                        >
+                            Home
+                        </Link>
+
+                        <Link
+                            href="/about"
+                            className="block px-4 py-3 hover:bg-[#2a2a2a] hover:text-orange-500 transition-colors uppercase text-sm font-medium rounded"
+                            onClick={closeMobileMenu}
+                        >
+                            About
+                        </Link>
+
+                        {/* Mobile Services Dropdown */}
+                        <div>
+                            <button
+                                className="w-full flex items-center justify-between px-4 py-3 hover:bg-[#2a2a2a] hover:text-orange-500 transition-colors uppercase text-sm font-medium rounded"
+                                onClick={() => setMobileServicesOpen(!mobileServicesOpen)}
+                            >
+                                Services
+                                <ChevronDown className={`w-4 h-4 transition-transform duration-300 ${mobileServicesOpen ? 'rotate-180' : ''}`} />
+                            </button>
+                            <div className={`overflow-hidden transition-all duration-300 ${mobileServicesOpen ? 'max-h-48' : 'max-h-0'}`}>
+                                <div className="pl-4 py-1 space-y-1">
+                                    <Link
+                                        href="/services/repair"
+                                        className="block px-4 py-2 text-sm hover:text-orange-500 transition-colors rounded hover:bg-[#2a2a2a]"
+                                        onClick={closeMobileMenu}
+                                    >
+                                        Repair Services
+                                    </Link>
+                                    <Link
+                                        href="/services/maintenance"
+                                        className="block px-4 py-2 text-sm hover:text-orange-500 transition-colors rounded hover:bg-[#2a2a2a]"
+                                        onClick={closeMobileMenu}
+                                    >
+                                        Maintenance
+                                    </Link>
+                                    <Link
+                                        href="/services/diagnostics"
+                                        className="block px-4 py-2 text-sm hover:text-orange-500 transition-colors rounded hover:bg-[#2a2a2a]"
+                                        onClick={closeMobileMenu}
+                                    >
+                                        Diagnostics
+                                    </Link>
+                                </div>
+                            </div>
+                        </div>
+
+                        <Link
+                            href="/shop"
+                            className="block px-4 py-3 hover:bg-[#2a2a2a] hover:text-orange-500 transition-colors uppercase text-sm font-medium rounded"
+                            onClick={closeMobileMenu}
+                        >
+                            Shop
+                        </Link>
+
+                        <Link
+                            href="/contacts"
+                            className="block px-4 py-3 hover:bg-[#2a2a2a] hover:text-orange-500 transition-colors uppercase text-sm font-medium rounded"
+                            onClick={closeMobileMenu}
+                        >
+                            Contacts
+                        </Link>
+
+                        {/* Mobile Phone Button */}
+                        <Link
+                            href="tel:+9441225678"
+                            className="flex items-center justify-center gap-2 mt-6 bg-orange-500 text-white rounded-full px-5 py-3 hover:bg-orange-600 transition-all"
+                            onClick={closeMobileMenu}
+                        >
+                            <Phone className="w-4 h-4" />
+                            <span className="text-sm font-medium">+94 412 25 678</span>
+                        </Link>
+                    </div>
+                </div>
+            </div>
+        </>
+    );
+}
