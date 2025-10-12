@@ -1,13 +1,45 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import Link from 'next/link';
-import { Phone, ChevronDown, X, Menu } from 'lucide-react';
+import { Phone, ChevronDown, X, Menu, LogOut } from 'lucide-react';
+import { useRouter } from 'next/navigation';
+
+interface UserInfo {
+    firstName: string;
+    lastName: string;
+    email: string;
+    role: string;
+}
 
 export default function Navbar() {
     const [servicesOpen, setServicesOpen] = useState(false);
     const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
     const [mobileServicesOpen, setMobileServicesOpen] = useState(false);
+    const [userInfo, setUserInfo] = useState<UserInfo | null>(null);
+    const [profileDropdownOpen, setProfileDropdownOpen] = useState(false);
+    const router = useRouter();
+
+    useEffect(() => {
+        // Get user info from localStorage
+        const storedUserInfo = localStorage.getItem('userInfo');
+        if (storedUserInfo) {
+            try {
+                setUserInfo(JSON.parse(storedUserInfo));
+            } catch (error) {
+                console.error('Error parsing user info:', error);
+            }
+        }
+    }, []);
+
+    const handleLogout = () => {
+        // Clear all auth-related data from localStorage
+        localStorage.removeItem('userInfo');
+        localStorage.removeItem('authToken');
+        localStorage.removeItem('userRole');
+        // Navigate to home page
+        router.replace('/');
+    };
 
     const closeMobileMenu = () => {
         setMobileMenuOpen(false);
@@ -88,14 +120,58 @@ export default function Navbar() {
                         </Link>
                     </div>
 
-                    {/* Phone Button - Desktop */}
-                    <Link
-                        href="tel:+9441225678"
-                        className="hidden md:flex items-center gap-2 bg-transparent border border-white rounded-full px-5 py-2 hover:bg-orange-500 hover:border-orange-500 transition-all"
-                    >
-                        <Phone className="w-4 h-4" />
-                        <span className="text-sm font-medium">+94 412 25 678</span>
-                    </Link>
+                    {/* Desktop Right Section - Phone Button + Profile */}
+                    <div className="hidden md:flex items-center gap-2">
+                        {/* Phone Button */}
+                        <Link
+                            href="tel:+9441225678"
+                            className="flex items-center gap-2 bg-transparent border border-white rounded-full px-5 py-2 hover:bg-orange-500 hover:border-orange-500 transition-all"
+                        >
+                            <Phone className="w-4 h-4" />
+                            <span className="text-sm font-medium">+94 412 25 678</span>
+                        </Link>
+
+                        {/* Profile Icon with Dropdown */}
+                        {userInfo && (
+                            <div 
+                                className="relative"
+                                onMouseEnter={() => setProfileDropdownOpen(true)}
+                                onMouseLeave={() => setProfileDropdownOpen(false)}
+                            >
+                                <button className="flex items-center gap-2 px-3 py-2 rounded-full bg-gray-800/50 border border-gray-700/50 hover:border-orange-500/50 transition-all duration-200">
+                                    <div className="w-8 h-8 bg-gradient-to-r from-orange-500 to-orange-600 rounded-full flex items-center justify-center">
+                                        <span className="text-white font-semibold text-sm">
+                                            {userInfo.firstName.charAt(0)}{userInfo.lastName.charAt(0)}
+                                        </span>
+                                    </div>
+                                    <span className="text-sm font-medium text-white">
+                                        {userInfo.firstName}
+                                    </span>
+                                    <ChevronDown className="w-4 h-4 text-gray-400" />
+                                </button>
+                                
+                                {profileDropdownOpen && (
+                                    <div className="absolute top-full right-0 pt-2 w-64 z-50">
+                                        <div className="bg-[#2a2a2a] rounded-lg shadow-lg py-2 border border-gray-700/50">
+                                            <div className="px-4 py-3 border-b border-gray-700/50">
+                                                <p className="text-sm font-medium text-white">
+                                                    {userInfo.firstName} {userInfo.lastName}
+                                                </p>
+                                                <p className="text-xs text-gray-400 mt-1">{userInfo.email}</p>
+                                            </div>
+                                            <button 
+                                                onClick={handleLogout}
+                                                className="w-full flex items-center gap-2 px-4 py-2 hover:bg-orange-500 transition-colors text-sm text-left"
+                                            >
+                                                <LogOut className="w-4 h-4" />
+                                                Logout
+                                            </button>
+                                        </div>
+                                    </div>
+                                )}
+                            </div>
+                        )}
+                    </div>
 
                     {/* Mobile Menu Button */}
                     <button 
@@ -218,6 +294,37 @@ export default function Navbar() {
                             <Phone className="w-4 h-4" />
                             <span className="text-sm font-medium">+94 412 25 678</span>
                         </Link>
+
+                        {/* Mobile Profile Section */}
+                        {userInfo && (
+                            <div className="mt-6 pt-6 border-t border-gray-700">
+                                <div className="px-4 py-3 bg-[#2a2a2a] rounded-lg mb-3">
+                                    <div className="flex items-center gap-3 mb-2">
+                                        <div className="w-10 h-10 bg-gradient-to-r from-orange-500 to-orange-600 rounded-full flex items-center justify-center">
+                                            <span className="text-white font-semibold text-sm">
+                                                {userInfo.firstName.charAt(0)}{userInfo.lastName.charAt(0)}
+                                            </span>
+                                        </div>
+                                        <div>
+                                            <p className="text-sm font-medium text-white">
+                                                {userInfo.firstName} {userInfo.lastName}
+                                            </p>
+                                            <p className="text-xs text-gray-400">{userInfo.email}</p>
+                                        </div>
+                                    </div>
+                                </div>
+                                <button 
+                                    onClick={() => {
+                                        handleLogout();
+                                        closeMobileMenu();
+                                    }}
+                                    className="w-full flex items-center justify-center gap-2 bg-red-600 text-white rounded-full px-5 py-3 hover:bg-red-700 transition-all"
+                                >
+                                    <LogOut className="w-4 h-4" />
+                                    <span className="text-sm font-medium">Logout</span>
+                                </button>
+                            </div>
+                        )}
                     </div>
                 </div>
             </div>
