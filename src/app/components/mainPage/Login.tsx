@@ -5,6 +5,7 @@ import SignUp from "./SignUp";
 import { loginUser } from "@/app/services/UserRegisterAndLoginServices";
 import Cookies from "js-cookie";
 import {useRouter} from "next/navigation";
+import ErrorPopUp from "@/app/components/ErrorPopuUp";
 
 type View = "intro" | "login" | "signup";
 
@@ -13,6 +14,7 @@ export default function Login() {
 	const [username, setUsername] = useState("");
 	const [password, setPassword] = useState("");
 	const [message, setMessage] = useState<string | null>(null);
+	const [errorPopup, setErrorPopup] = useState({ open: false, message: "", type: "error" as "error" | "success" | "warning" | "info" });
 	const router= useRouter();
 
 	const redirectUser = (role:string)=>{
@@ -30,7 +32,7 @@ export default function Login() {
 	const handleLogin = async (e: FormEvent) => {
 		e.preventDefault();
 		if (!username || !password) {
-			setMessage("Please enter both username and password.");
+			setErrorPopup({ open: true, message: "Please enter both username and password.", type: "warning" });
 			return;
 		}
 
@@ -53,12 +55,14 @@ export default function Login() {
 				);
 				redirectUser(response.role);
 			} else {
-				setMessage("Login failed. Please try again.");
+				setErrorPopup({ open: true, message: "Login failed. Please try again.", type: "error" });
+				setMessage(null);
 			}
-		} catch (error) {
-				setMessage("An error occurred. Please try again.");
+		} catch (error: any) {
+			setErrorPopup({ open: true, message: error.message || "An error occurred. Please try again.", type: "error" });
+			setMessage(null);
 		}
-		};
+	};
 
 
 	if (view === "signup") {
@@ -219,6 +223,14 @@ export default function Login() {
 					</section>
 				)}
 			</div>
+
+			{/* Error Popup */}
+			<ErrorPopUp
+				open={errorPopup.open}
+				onClose={() => setErrorPopup({ ...errorPopup, open: false })}
+				message={errorPopup.message}
+				type={errorPopup.type}
+			/>
 		</main>
 	);
 }
