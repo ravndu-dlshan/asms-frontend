@@ -6,6 +6,7 @@ import CusDashboardStat from './components/cusStat';
 import ServiceSection from './components/serviceCard';
 import FooterSection from '../components/footer';
 import ContactSection from './components/contactSection';
+import ChatBot from '../components/ChatBot';
 
 const CustomerDashBoard = () => {
     return (
@@ -16,6 +17,7 @@ const CustomerDashBoard = () => {
             <CusDashboardStat />
             <ContactSection />
             <FooterSection />
+            <ChatBot />
         </>
     );
 };
