@@ -11,6 +11,7 @@ import DialogContent from "@mui/material/DialogContent";
 import DialogContentText from "@mui/material/DialogContentText";
 import DialogTitle from "@mui/material/DialogTitle";
 import TextField from "@mui/material/TextField";
+import ErrorPopUp from "@/app/components/ErrorPopuUp";
 
 type Props = {
 	onBackToLogin?: () => void;
@@ -26,6 +27,7 @@ export default function SignUp({ onBackToLogin }: Props) {
 	const [confirmPassword, setConfirmPassword] = useState("");
 	const [role, setRole] = useState("");
 	const [message, setMessage] = useState<string | null>(null);
+	const [errorPopup, setErrorPopup] = useState({ open: false, message: "", type: "error" as "error" | "success" | "warning" | "info" });
 
 
 	// OTP dialog state
@@ -38,11 +40,11 @@ export default function SignUp({ onBackToLogin }: Props) {
 	const handleSubmit = async (e: FormEvent) => {
 		e.preventDefault();
 		if (!firstName || !lastName || !email || !dob || !gender || !role || !password || !confirmPassword) {
-			setMessage("Please fill in all fields.");
+			setErrorPopup({ open: true, message: "Please fill in all fields.", type: "warning" });
 			return;
 		}
 		if (password !== confirmPassword) {
-			setMessage("Passwords do not match.");
+			setErrorPopup({ open: true, message: "Passwords do not match.", type: "warning" });
 			return;
 		}
 		setMessage("Registering…");
@@ -61,10 +63,12 @@ export default function SignUp({ onBackToLogin }: Props) {
 				setMessage("Registration successful! Please verify via OTP.");
 				setOtpOpen(true);
 			} else {
-				setMessage("Registration failed. Please try again.");
+				setErrorPopup({ open: true, message: "Registration failed. Please try again.", type: "error" });
+				setMessage(null);
 			}
-			}catch(error){
-				setMessage("An error occurred. Please try again.");
+			}catch(error: any){
+				setErrorPopup({ open: true, message: error.message || "An error occurred. Please try again.", type: "error" });
+				setMessage(null);
 			}
 	};
 
@@ -95,9 +99,8 @@ export default function SignUp({ onBackToLogin }: Props) {
 			} else {
 				setOtpError("Invalid OTP. Please try again.");
 			}
-		} catch (error) {
-			console.log(error);
-			setOtpError("Verification failed. Please try again.");
+		} catch (error: any) {
+			setOtpError(error.message || "Verification failed. Please try again.");
 		}
 	};
 
@@ -415,6 +418,14 @@ export default function SignUp({ onBackToLogin }: Props) {
 					</Button>
 				</DialogActions>
 			</Dialog>
+
+			{/* Error Popup */}
+			<ErrorPopUp
+				open={errorPopup.open}
+				onClose={() => setErrorPopup({ ...errorPopup, open: false })}
+				message={errorPopup.message}
+				type={errorPopup.type}
+			/>
 		</div>
 	);
 }
