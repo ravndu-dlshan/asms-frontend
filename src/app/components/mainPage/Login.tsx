@@ -2,12 +2,13 @@
 
 import { FormEvent, useState } from "react";
 import SignUp from "./SignUp";
+import ForgotPassword from "./ForgotPassword";
 import { loginUser } from "@/app/services/UserRegisterAndLoginServices";
 import Cookies from "js-cookie";
 import {useRouter} from "next/navigation";
 import ErrorPopUp from "@/app/components/ErrorPopuUp";
 
-type View = "intro" | "login" | "signup";
+type View = "intro" | "login" | "signup" | "forgot-password";
 
 export default function Login() {
 	const [view, setView] = useState<View>("intro");
@@ -69,6 +70,14 @@ export default function Login() {
 		return (
 			<div className="min-h-screen bg-gradient-to-br from-gray-900 via-gray-800 to-black flex items-center justify-center px-4 py-12">
 				<SignUp onBackToLogin={() => setView("login")} />
+			</div>
+		);
+	}
+
+	if (view === "forgot-password") {
+		return (
+			<div className="min-h-screen bg-gradient-to-br from-gray-900 via-gray-800 to-black flex items-center justify-center px-4 py-12">
+				<ForgotPassword onBackToLogin={() => setView("login")} />
 			</div>
 		);
 	}
@@ -198,6 +207,17 @@ export default function Login() {
 							>
 								Sign In
 							</button>
+
+							{/* Forgot Password Link */}
+							<div className="text-center">
+								<button
+									type="button"
+									onClick={() => setView("forgot-password")}
+									className="text-sm text-gray-400 hover:text-orange-400 transition-colors duration-200"
+								>
+									Forgot Password?
+								</button>
+							</div>
 						</form>
 
 						<div className="mt-6 text-center">
