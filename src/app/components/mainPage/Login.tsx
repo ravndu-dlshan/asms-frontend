@@ -45,6 +45,8 @@ export default function Login() {
 
 			if (response && response.token) {
 				setMessage("Login Successful!");
+				
+				// Store user info in localStorage
 				localStorage.setItem(
 					"userInfo",
 					JSON.stringify({
@@ -54,6 +56,10 @@ export default function Login() {
 					role: response.role,
 					})
 				);
+				
+				// Store token in cookies
+				Cookies.set("authToken", response.token, { expires: 7 }); 
+				
 				redirectUser(response.role);
 			} else {
 				setErrorPopup({ open: true, message: "Login failed. Please try again.", type: "error" });
