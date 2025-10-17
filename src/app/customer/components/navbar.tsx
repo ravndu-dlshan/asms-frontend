@@ -53,10 +53,10 @@ export default function Navbar() {
 
     return (
         <>
-            <nav className="bg-[#1a1a1a] text-white py-4 px-6">
-                <div className="max-w-7xl mx-auto flex items-center justify-between">
+            <nav className="bg-[#1a1a1a] text-white py-4 px-6 shadow-lg">
+                <div className="max-w-7xl mx-auto flex items-center justify-between gap-8">
                     {/* Logo */}
-                    <Link href="/" className="flex items-center">
+                    <Link href="/" className="flex items-center flex-shrink-0">
                         <div className="w-10 h-10 bg-gradient-to-r from-orange-500 to-orange-600 rounded-lg flex items-center justify-center mr-2">
                             <svg className="w-5 h-5 text-white" fill="currentColor" viewBox="0 0 24 24">
                                 <path d="M18.92 6.01C18.72 5.42 18.16 5 17.5 5h-11c-.66 0-1.22.42-1.42 1.01L3 12v8c0 .55.45 1 1 1h1c.55 0 1-.45 1-1v-1h12v1c0 .55.45 1 1 1h1c.55 0 1-.45 1-1v-8l-2.08-5.99zM6.5 16c-.83 0-1.5-.67-1.5-1.5S5.67 13 6.5 13s1.5.67 1.5 1.5S7.33 16 6.5 16zm11 0c-.83 0-1.5-.67-1.5-1.5s.67-1.5 1.5-1.5 1.5.67 1.5 1.5-.67 1.5-1.5 1.5zM5 11l1.5-4.5h11L19 11H5z" />
@@ -68,7 +68,7 @@ export default function Navbar() {
                     </Link>
 
                     {/* Desktop Navigation Links */}
-                    <div className="hidden md:flex items-center space-x-8">
+                    <div className="hidden md:flex items-center space-x-8 flex-1">
                         <Link
                             href="/"
                             className="text-orange-500 hover:text-orange-400 transition-colors uppercase text-sm font-medium"
@@ -126,11 +126,11 @@ export default function Navbar() {
                     </div>
 
                     {/* Desktop Right Section - Phone Button + Profile */}
-                    <div className="hidden md:flex items-center gap-2">
+                    <div className="hidden md:flex items-center gap-4 ml-auto">
                         {/* Phone Button */}
                         <Link
                             href="tel:+9441225678"
-                            className="flex items-center gap-2 bg-transparent border border-white rounded-full px-5 py-2 hover:bg-orange-500 hover:border-orange-500 transition-all"
+                            className="flex items-center gap-2 bg-transparent border border-gray-600 rounded-full px-4 py-2 hover:bg-orange-500 hover:border-orange-500 transition-all duration-200"
                         >
                             <Phone className="w-4 h-4" />
                             <span className="text-sm font-medium">+94 412 25 678</span>
@@ -143,33 +143,42 @@ export default function Navbar() {
                                 onMouseEnter={() => setProfileDropdownOpen(true)}
                                 onMouseLeave={() => setProfileDropdownOpen(false)}
                             >
-                                <button className="flex items-center gap-2 px-3 py-2 rounded-full bg-gray-800/50 border border-gray-700/50 hover:border-orange-500/50 transition-all duration-200">
-                                    <div className="w-8 h-8 bg-gradient-to-r from-orange-500 to-orange-600 rounded-full flex items-center justify-center">
-                                        <span className="text-white font-semibold text-sm">
+                                <button className="flex items-center gap-3 px-4 py-2 rounded-full bg-gradient-to-r from-gray-800/80 to-gray-900/80 border border-gray-700/50 hover:border-orange-500/50 hover:shadow-lg hover:shadow-orange-500/20 transition-all duration-200">
+                                    <div className="w-9 h-9 bg-gradient-to-br from-orange-500 to-orange-600 rounded-full flex items-center justify-center shadow-md">
+                                        <span className="text-white font-bold text-sm">
                                             {userInfo.firstName.charAt(0)}{userInfo.lastName.charAt(0)}
                                         </span>
                                     </div>
-                                    <span className="text-sm font-medium text-white">
-                                        {userInfo.firstName}
+                                    <span className="text-sm font-semibold text-white">
+                                        {userInfo.firstName} {userInfo.lastName}
                                     </span>
-                                    <ChevronDown className="w-4 h-4 text-gray-400" />
+                                    <ChevronDown className="w-4 h-4 text-gray-400 ml-1" />
                                 </button>
                                 
                                 {profileDropdownOpen && (
                                     <div className="absolute top-full right-0 pt-2 w-64 z-50">
-                                        <div className="bg-[#2a2a2a] rounded-lg shadow-lg py-2 border border-gray-700/50">
-                                            <div className="px-4 py-3 border-b border-gray-700/50">
-                                                <p className="text-sm font-medium text-white">
-                                                    {userInfo.firstName} {userInfo.lastName}
-                                                </p>
-                                                <p className="text-xs text-gray-400 mt-1">{userInfo.email}</p>
+                                        <div className="bg-gradient-to-br from-[#2a2a2a] to-[#1f1f1f] rounded-xl shadow-2xl py-2 border border-gray-700/50 overflow-hidden">
+                                            <div className="px-5 py-4 border-b border-gray-700/50">
+                                                <div className="flex items-center gap-3">
+                                                    <div className="w-12 h-12 bg-gradient-to-br from-orange-500 to-orange-600 rounded-full flex items-center justify-center shadow-lg">
+                                                        <span className="text-white font-bold text-lg">
+                                                            {userInfo.firstName.charAt(0)}{userInfo.lastName.charAt(0)}
+                                                        </span>
+                                                    </div>
+                                                    <div className="flex-1 min-w-0">
+                                                        <p className="text-sm font-semibold text-white truncate">
+                                                            {userInfo.firstName} {userInfo.lastName}
+                                                        </p>
+                                                        <p className="text-xs text-gray-400 mt-0.5 truncate">{userInfo.email}</p>
+                                                    </div>
+                                                </div>
                                             </div>
                                             <button 
                                                 onClick={handleLogout}
-                                                className="w-full flex items-center gap-2 px-4 py-2 hover:bg-orange-500 transition-colors text-sm text-left"
+                                                className="w-full flex items-center gap-3 px-5 py-3 hover:bg-gradient-to-r hover:from-red-500/20 hover:to-red-600/10 transition-all duration-200 text-sm text-left group"
                                             >
-                                                <LogOut className="w-4 h-4" />
-                                                Logout
+                                                <LogOut className="w-4 h-4 text-gray-400 group-hover:text-red-400 transition-colors" />
+                                                <span className="text-gray-300 group-hover:text-white font-medium">Logout</span>
                                             </button>
                                         </div>
                                     </div>
