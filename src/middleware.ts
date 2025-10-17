@@ -25,21 +25,17 @@ export async function middleware(req: NextRequest) {
     return NextResponse.next()
   }
 
-  console.log('🔐 Protected route detected:', pathname)
 
   const token = req.cookies.get('authToken')?.value
 
   if (!token) {
-    console.log('❌ No token found - Redirecting to /')
     return NextResponse.redirect(new URL('/', req.url))
   }
 
   try {
     const decoded = await decodeJwtTokenMiddleware(token)
     const role = decoded.role 
-    console.log('✅ Token verified. Role:', role, '| Path:', pathname)
 
-    // Determine the correct home page based on user's role
     const getRoleBasedRedirect = (userRole: string): string => {
       switch (userRole) {
         case 'ROLE_ADMIN':
@@ -53,7 +49,7 @@ export async function middleware(req: NextRequest) {
       }
     }
 
-    // Block access based on role and redirect to their correct dashboard
+  
     if (isAdminRoute && role !== 'ROLE_ADMIN') {
       const redirectTo = getRoleBasedRedirect(role)
       return NextResponse.redirect(new URL(redirectTo, req.url))
@@ -69,7 +65,6 @@ export async function middleware(req: NextRequest) {
   }
 }
 
-// Match all routes except static files
 export const config = {
   matcher: [
     '/((?!_next/static|_next/image|favicon.ico|.*\\..*|api).*)',
