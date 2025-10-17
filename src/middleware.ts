@@ -5,11 +5,11 @@ import { decodeJwtTokenMiddleware } from './app/services/JwtDecoderMiddleware'
 export async function middleware(req: NextRequest) {
   const pathname = req.nextUrl.pathname
 
-  // Skip middleware for static files and Next.js internals
+ 
   if (
     pathname.startsWith('/_next') ||
     pathname.startsWith('/static') ||
-    pathname.includes('.') || // Skip files with extensions (images, fonts, etc.)
+    pathname.includes('.') || 
     pathname === '/favicon.ico' ||
     pathname.startsWith('/api') ||
     pathname.startsWith('/debug-token')
