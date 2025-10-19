@@ -1,13 +1,15 @@
 'use client';
 
 import { useState, useRef, useEffect } from 'react';
-import { MessageCircle, X, Send, Bot, User, Minimize2 } from 'lucide-react';
+import { MessageCircle, X, Send, Bot, User, Minimize2, Loader2 } from 'lucide-react';
+import { sendChatMessage, startNewConversation, getSuggestedQueries } from '../services/ChatBotServices';
 
 interface Message {
     id: string;
     text: string;
     sender: 'user' | 'bot';
     timestamp: Date;
+    error?: boolean;
 }
 
 export default function ChatBot() {
@@ -23,6 +25,9 @@ export default function ChatBot() {
     ]);
     const [inputMessage, setInputMessage] = useState('');
     const [isTyping, setIsTyping] = useState(false);
+    const [conversationId, setConversationId] = useState<string | null>(null);
+    const [suggestedQueries, setSuggestedQueries] = useState<string[]>([]);
+    const [isLoadingSuggestions, setIsLoadingSuggestions] = useState(false);
     const messagesEndRef = useRef<HTMLDivElement>(null);
     const inputRef = useRef<HTMLInputElement>(null);
 
@@ -40,35 +45,43 @@ export default function ChatBot() {
         }
     }, [isOpen, isMinimized]);
 
-    const generateBotResponse = (userMessage: string): string => {
-        const message = userMessage.toLowerCase();
-        
-        // Simple response logic - you can replace this with actual AI API calls
-        if (message.includes('service') || message.includes('repair')) {
-            return "We offer a wide range of automotive services including oil changes, brake repairs, engine diagnostics, and routine maintenance. Would you like to schedule an appointment?";
-        } else if (message.includes('appointment') || message.includes('book') || message.includes('schedule')) {
-            return "I'd be happy to help you schedule an appointment! Please visit our Services page or call us at +94 412 25 678 to book a convenient time.";
-        } else if (message.includes('price') || message.includes('cost')) {
-            return "Our pricing varies depending on the service needed. For accurate quotes, please contact us directly or visit our shop for a free estimate.";
-        } else if (message.includes('hour') || message.includes('open')) {
-            return "We're open Monday to Saturday, 8:00 AM - 6:00 PM. Closed on Sundays and public holidays.";
-        } else if (message.includes('location') || message.includes('address')) {
-            return "You can find us at our service center. Check the Contacts page for our full address and directions!";
-        } else if (message.includes('thank')) {
-            return "You're welcome! Is there anything else I can help you with?";
-        } else if (message.includes('bye') || message.includes('goodbye')) {
-            return "Thank you for chatting with Carvo! Have a great day and drive safe! 🚗";
-        } else {
-            return "I understand you're asking about: '" + userMessage + "'. For detailed assistance, please call us at +94 412 25 678 or visit our Services page. How else can I help you?";
+    // Initialize conversation when chat opens
+    useEffect(() => {
+        if (isOpen && !conversationId) {
+            initializeConversation();
+            loadSuggestedQueries();
+        }
+    }, [isOpen]);
+
+    const initializeConversation = async () => {
+        try {
+            const { conversationId: newId } = await startNewConversation();
+            setConversationId(newId);
+        } catch (error) {
+            console.error('Failed to start conversation:', error);
+            // Continue without conversation ID
         }
     };
 
-    const handleSendMessage = async () => {
-        if (!inputMessage.trim()) return;
+    const loadSuggestedQueries = async () => {
+        setIsLoadingSuggestions(true);
+        try {
+            const suggestions = await getSuggestedQueries();
+            setSuggestedQueries(suggestions);
+        } catch (error) {
+            console.error('Failed to load suggestions:', error);
+        } finally {
+            setIsLoadingSuggestions(false);
+        }
+    };
+
+    const handleSendMessage = async (messageText?: string) => {
+        const textToSend = messageText || inputMessage;
+        if (!textToSend.trim()) return;
 
         const userMessage: Message = {
             id: Date.now().toString(),
-            text: inputMessage,
+            text: textToSend,
             sender: 'user',
             timestamp: new Date(),
         };
@@ -77,17 +90,50 @@ export default function ChatBot() {
         setInputMessage('');
         setIsTyping(true);
 
-        // Simulate bot thinking time
-        setTimeout(() => {
+        try {
+            console.log('🚀 Sending message to backend:', textToSend);
+            
+            // Send message to chatbot API
+            const response = await sendChatMessage(textToSend, conversationId || undefined);
+            
+            console.log('✅ Received response:', response);
+            console.log('✅ Response text:', response.response);
+            
             const botResponse: Message = {
                 id: (Date.now() + 1).toString(),
-                text: generateBotResponse(inputMessage),
+                text: response.response || 'No response received from server',
                 sender: 'bot',
                 timestamp: new Date(),
             };
+            
+            console.log('💬 Adding bot message to UI:', botResponse);
+            
             setMessages(prev => [...prev, botResponse]);
+            
+            // Update conversation ID if provided
+            if (response.conversationId && !conversationId) {
+                setConversationId(response.conversationId);
+            }
+        } catch (error: any) {
+            console.error('❌ Error in handleSendMessage:', error);
+            
+            // Show error message in chat
+            const errorMessage: Message = {
+                id: (Date.now() + 1).toString(),
+                text: error.message || "Sorry, I'm having trouble connecting right now. Please try again later.",
+                sender: 'bot',
+                timestamp: new Date(),
+                error: true,
+            };
+            setMessages(prev => [...prev, errorMessage]);
+        } finally {
             setIsTyping(false);
-        }, 1000 + Math.random() * 1000); // Random delay between 1-2 seconds
+        }
+    };
+
+    const handleSuggestedQueryClick = (query: string) => {
+        setInputMessage(query);
+        handleSendMessage(query);
     };
 
     const handleKeyPress = (e: React.KeyboardEvent<HTMLInputElement>) => {
@@ -155,7 +201,7 @@ export default function ChatBot() {
                     {!isMinimized && (
                         <>
                             {/* Messages Container */}
-                            <div className="h-[460px] overflow-y-auto p-4 space-y-4 bg-gray-900">
+                            <div className="h-[400px] overflow-y-auto p-4 space-y-4 bg-gray-900">
                                 {messages.map((message) => (
                                     <div
                                         key={message.id}
@@ -164,7 +210,9 @@ export default function ChatBot() {
                                         {/* Avatar */}
                                         <div className={`w-8 h-8 rounded-full flex items-center justify-center flex-shrink-0 ${
                                             message.sender === 'bot'
-                                                ? 'bg-gradient-to-r from-orange-500 to-orange-600'
+                                                ? message.error 
+                                                    ? 'bg-red-500' 
+                                                    : 'bg-gradient-to-r from-orange-500 to-orange-600'
                                                 : 'bg-gray-700'
                                         }`}>
                                             {message.sender === 'bot' ? (
@@ -178,7 +226,9 @@ export default function ChatBot() {
                                         <div className={`flex flex-col max-w-[75%] ${message.sender === 'user' ? 'items-end' : ''}`}>
                                             <div className={`px-4 py-2.5 rounded-2xl ${
                                                 message.sender === 'bot'
-                                                    ? 'bg-gray-800 text-gray-200 rounded-tl-none'
+                                                    ? message.error
+                                                        ? 'bg-red-900/50 text-red-200 rounded-tl-none border border-red-700'
+                                                        : 'bg-gray-800 text-gray-200 rounded-tl-none'
                                                     : 'bg-gradient-to-r from-orange-500 to-orange-600 text-white rounded-tr-none'
                                             }`}>
                                                 <p className="text-sm leading-relaxed">{message.text}</p>
@@ -209,6 +259,24 @@ export default function ChatBot() {
                                 <div ref={messagesEndRef} />
                             </div>
 
+                            {/* Suggested Queries */}
+                            {messages.length <= 1 && suggestedQueries.length > 0 && !isTyping && (
+                                <div className="px-4 py-3 bg-gray-800/30 border-t border-gray-700/50">
+                                    <p className="text-xs text-gray-400 mb-2">Suggested questions:</p>
+                                    <div className="flex flex-wrap gap-2">
+                                        {suggestedQueries.slice(0, 4).map((query, index) => (
+                                            <button
+                                                key={index}
+                                                onClick={() => handleSuggestedQueryClick(query)}
+                                                className="text-xs px-3 py-1.5 bg-gray-700/50 hover:bg-orange-500/20 text-gray-300 hover:text-orange-400 rounded-full transition-all border border-gray-600/50 hover:border-orange-500/50"
+                                            >
+                                                {query}
+                                            </button>
+                                        ))}
+                                    </div>
+                                </div>
+                            )}
+
                             {/* Input Area */}
                             <div className="p-4 bg-gray-800/50 border-t border-gray-700/50">
                                 <div className="flex gap-2">
@@ -219,15 +287,20 @@ export default function ChatBot() {
                                         onChange={(e) => setInputMessage(e.target.value)}
                                         onKeyPress={handleKeyPress}
                                         placeholder="Type your message..."
-                                        className="flex-1 bg-gray-800 text-white placeholder-gray-400 rounded-xl px-4 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-orange-500 border border-gray-700"
+                                        disabled={isTyping}
+                                        className="flex-1 bg-gray-800 text-white placeholder-gray-400 rounded-xl px-4 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-orange-500 border border-gray-700 disabled:opacity-50"
                                     />
                                     <button
-                                        onClick={handleSendMessage}
-                                        disabled={!inputMessage.trim()}
-                                        className="bg-gradient-to-r from-orange-500 to-orange-600 text-white p-2.5 rounded-xl hover:from-orange-600 hover:to-orange-700 transition-all disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center"
+                                        onClick={() => handleSendMessage()}
+                                        disabled={!inputMessage.trim() || isTyping}
+                                        className="bg-gradient-to-r from-orange-500 to-orange-600 text-white p-2.5 rounded-xl hover:from-orange-600 hover:to-orange-700 transition-all disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center min-w-[42px]"
                                         aria-label="Send message"
                                     >
-                                        <Send className="w-5 h-5" />
+                                        {isTyping ? (
+                                            <Loader2 className="w-5 h-5 animate-spin" />
+                                        ) : (
+                                            <Send className="w-5 h-5" />
+                                        )}
                                     </button>
                                 </div>
                             </div>
