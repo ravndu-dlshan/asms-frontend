@@ -77,7 +77,7 @@ export default function Sidebar({
   const pathname = usePathname();
 
   const isActive = (href: string) => {
-    if (href === "/employee") {
+    if (href === "/employee/dashboard") {
       return pathname === href;
     }
     return pathname.startsWith(href);
@@ -115,7 +115,7 @@ export default function Sidebar({
                 <path d="M18.92 6.01C18.72 5.42 18.16 5 17.5 5h-11c-.66 0-1.22.42-1.42 1.01L3 12v8c0 .55.45 1 1 1h1c.55 0 1-.45 1-1v-1h12v1c0 .55.45 1 1 1h1c.55 0 1-.45 1-1v-8l-2.08-5.99zM6.5 16c-.83 0-1.5-.67-1.5-1.5S5.67 13 6.5 13s1.5.67 1.5 1.5S7.33 16 6.5 16zm11 0c-.83 0-1.5-.67-1.5-1.5s.67-1.5 1.5-1.5 1.5.67 1.5 1.5-.67 1.5-1.5 1.5zM5 11l1.5-4.5h11L19 11H5z" />
               </svg>
             </div>
-            <div className="pl-2"> 
+            <div className="pl-2">
               <h2 className="text-2xl font-bold text-white">
                 Car<span className="text-orange-500">vo</span>
               </h2>
@@ -147,8 +147,17 @@ export default function Sidebar({
       </div>
 
       {/* User Profile Section */}
-      <div className={`p-4 border-b border-gray-800 ${!sidebarOpen ? "flex justify-center" : ""}`}>
-        <div className={`flex ${sidebarOpen ? "items-center space-x-3" : "justify-center"}`}>
+      <Link
+        href="/employee/profile"
+        className={`p-4 border-b border-gray-800 block transition hover:bg-gray-800/50 ${
+          !sidebarOpen ? "flex justify-center" : ""
+        }`}
+      >
+        <div
+          className={`flex ${
+            sidebarOpen ? "items-center space-x-3" : "justify-center"
+          }`}
+        >
           <div className="w-10 h-10 bg-gradient-to-br from-orange-500 to-orange-600 rounded-full flex items-center justify-center flex-shrink-0">
             {user.avatar ? (
               <img
@@ -169,7 +178,7 @@ export default function Sidebar({
             </div>
           )}
         </div>
-      </div>
+      </Link>
 
       {/* Navigation Menu */}
       <nav className="p-4 space-y-2 flex-1 overflow-y-auto">
@@ -200,11 +209,17 @@ export default function Sidebar({
       </nav>
 
       {/* Bottom Actions */}
-      <div className={`p-4 border-t border-gray-800 space-y-2 ${!sidebarOpen ? "flex justify-center" : ""}`}>
+      <div
+        className={`p-4 border-t border-gray-800 space-y-2 ${
+          !sidebarOpen ? "flex justify-center" : ""
+        }`}
+      >
         <button
           onClick={handleLogout}
-          className={`flex items-center ${
-            sidebarOpen ? "justify-start space-x-3 px-4 w-full" : "justify-center w-12 h-12"
+          className={`flex items-center cursor-pointer ${
+            sidebarOpen
+              ? "justify-start space-x-3 px-4 w-full"
+              : "justify-center w-12 h-12"
           } py-3 text-red-400 hover:text-red-300 hover:bg-red-900/20 rounded-lg transition-colors`}
           title={!sidebarOpen ? "Logout" : undefined}
         >
