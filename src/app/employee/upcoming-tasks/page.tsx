@@ -29,7 +29,7 @@ export default function UpcomingTasksPage() {
       customerPhone: '+1 (555) 123-4567',
       customerEmail: 'john.anderson@email.com',
       requiredParts: ['Synthetic Oil 5W-30', 'Oil Filter', 'Drain Plug Gasket'],
-      specialInstructions: 'Customer requested premium synthetic oil'
+      specialInstructions: 'Customer requested premium synthetic oil',
     },
     {
       id: 'TSK-2024-002',
