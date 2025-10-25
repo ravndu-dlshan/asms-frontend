@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useEffect, useRef, useState } from 'react';
+import React, { useEffect, useRef } from 'react';
 import { X, CheckCircle, Trash2 } from 'lucide-react';
 
 interface Notification {
@@ -13,10 +13,11 @@ interface Notification {
 
 interface NotificationPanelProps {
   onClose: () => void;
+  notifications: Notification[];
+  setNotifications: (notifications: Notification[]) => void;
 }
 
-export default function NotificationPanel({ onClose }: NotificationPanelProps) {
-  const [notifications, setNotifications] = useState<Notification[]>([]);
+export default function NotificationPanel({ onClose, notifications, setNotifications }: NotificationPanelProps) {
   const panelRef = useRef<HTMLDivElement>(null);
 
   // 🔹 Close panel if user clicks outside
@@ -31,46 +32,10 @@ export default function NotificationPanel({ onClose }: NotificationPanelProps) {
     return () => document.removeEventListener('mousedown', handleClickOutside);
   }, [onClose]);
 
-  // 🔹 Fetch notifications from backend (replace with your endpoint)
-  /*
-  useEffect(() => {
-    const fetchNotifications = async () => {
-      try {
-        const response = await fetch('http://localhost:5173/api/notifications'); // your endpoint
-        const data = await response.json();
-        setNotifications(data);
-      } catch (error) {
-        console.error('Error fetching notifications:', error);
-      }
-    };
-    fetchNotifications();
-  }, []);
-  */
-
-  //Example placeholders to be removed once backend connected
-  useEffect(() => {
-    setNotifications([
-      {
-        id: 1,
-        title: 'New Job Assigned',
-        message: 'A new job “Server Maintenance” has been assigned to you.',
-        time: '2 hours ago',
-        read: false,
-      },
-      {
-        id: 2,
-        title: 'Deadline Reminder',
-        message: 'The Mobile App Redesign project deadline is tomorrow.',
-        time: '5 hours ago',
-        read: true,
-      },
-    ]);
-  }, []);
-
   //Mark as read
   const handleMarkAsRead = (id: number) => {
-    setNotifications((prev) =>
-      prev.map((n) =>
+    setNotifications(
+      notifications.map((n) =>
         n.id === id ? { ...n, read: true } : n
       )
     );
@@ -79,7 +44,7 @@ export default function NotificationPanel({ onClose }: NotificationPanelProps) {
 
   // 🔹 Delete notification
   const handleDelete = (id: number) => {
-    setNotifications((prev) => prev.filter((n) => n.id !== id));
+    setNotifications(notifications.filter((n) => n.id !== id));
     // Optional: send DELETE request to backend
   };
 
