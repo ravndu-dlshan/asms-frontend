@@ -7,6 +7,7 @@ import { loginUser } from "@/app/services/UserRegisterAndLoginServices";
 import Cookies from "js-cookie";
 import {useRouter} from "next/navigation";
 import ErrorPopUp from "@/app/components/ErrorPopuUp";
+import { Eye, EyeOff } from "lucide-react";
 
 type View = "intro" | "login" | "signup" | "forgot-password";
 
@@ -14,6 +15,7 @@ export default function Login() {
 	const [view, setView] = useState<View>("intro");
 	const [username, setUsername] = useState("");
 	const [password, setPassword] = useState("");
+	const [showPassword, setShowPassword] = useState(false);
 	const [message, setMessage] = useState<string | null>(null);
 	const [errorPopup, setErrorPopup] = useState({ open: false, message: "", type: "error" as "error" | "success" | "warning" | "info" });
 	const router= useRouter();
@@ -57,7 +59,7 @@ export default function Login() {
 					})
 				);
 				
-				// Store token in cookies
+				
 				Cookies.set("authToken", response.token, { expires: 7 }); 
 				
 				redirectUser(response.role);
@@ -197,14 +199,24 @@ export default function Login() {
 								<label htmlFor="password" className="block text-sm font-medium text-gray-300 mb-2">
 									Password
 								</label>
-								<input
-									id="password"
-									type="password"
-									value={password}
-									onChange={(e) => setPassword(e.target.value)}
-									placeholder="••••••••••••"
-									className="w-full rounded-xl border border-gray-600 bg-gray-700/50 backdrop-blur-sm px-4 py-3 text-gray-200 placeholder:text-gray-500 shadow-sm focus:border-orange-500 focus:ring-2 focus:ring-orange-500/30 focus:bg-gray-700 transition-all duration-200"
-								/>
+								<div className="relative">
+									<input
+										id="password"
+										type={showPassword ? "text" : "password"}
+										value={password}
+										onChange={(e) => setPassword(e.target.value)}
+										placeholder="••••••••••••"
+										className="w-full rounded-xl border border-gray-600 bg-gray-700/50 backdrop-blur-sm px-4 py-3 pr-12 text-gray-200 placeholder:text-gray-500 shadow-sm focus:border-orange-500 focus:ring-2 focus:ring-orange-500/30 focus:bg-gray-700 transition-all duration-200"
+									/>
+									<button
+										type="button"
+										onClick={() => setShowPassword(!showPassword)}
+										className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-400 hover:text-gray-300 focus:outline-none transition-colors"
+										aria-label={showPassword ? "Hide password" : "Show password"}
+									>
+										{showPassword ? <EyeOff size={20} /> : <Eye size={20} />}
+									</button>
+								</div>
 							</div>
 							
 							<button

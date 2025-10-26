@@ -31,6 +31,7 @@ export const sendOtp = async (otpCode:string)=>{
 
 export const loginUser = async (loginData: { email: string; password: string }) => {
   try {
+    console.log("Login Data:", loginData);
     const response = await axiosInstance.post(`/api/auth/login`, loginData);
 
     const data = response.data;

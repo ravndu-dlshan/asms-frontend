@@ -19,8 +19,9 @@ export async function middleware(req: NextRequest) {
 
   const isAdminRoute = pathname === '/admin' || pathname.startsWith('/admin/')
   const isCustomerRoute = pathname === '/customer' || pathname.startsWith('/customer/')
+  const isEmployeeRoute = pathname === '/employee' || pathname.startsWith('/employee/')
 
-  if (!isAdminRoute && !isCustomerRoute) {
+  if (!isAdminRoute && !isCustomerRoute && !isEmployeeRoute) {
     return NextResponse.next()
   }
 
@@ -36,11 +37,14 @@ export async function middleware(req: NextRequest) {
     const role = decoded.role 
 
   
-    if (isAdminRoute && role !== 'ROLE_ADMIN') {
+    if (isAdminRoute && role !== 'ADMIN') {
       return NextResponse.redirect(new URL('/forbidden', req.url))
     }
 
-    if (isCustomerRoute && role !== 'ROLE_CUSTOMER') {
+    if (isCustomerRoute && role !== 'CUSTOMER') {
+      return NextResponse.redirect(new URL('/forbidden', req.url))
+    }
+    if (isEmployeeRoute && role !== 'EMPLOYEE') {
       return NextResponse.redirect(new URL('/forbidden', req.url))
     }
     return NextResponse.next()
