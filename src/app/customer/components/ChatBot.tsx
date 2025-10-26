@@ -201,7 +201,25 @@ export default function ChatBot() {
                     {!isMinimized && (
                         <>
                             {/* Messages Container */}
-                            <div className="h-[400px] overflow-y-auto p-4 space-y-4 bg-gray-900">
+                            <div className="h-[460px] overflow-y-auto p-4 space-y-4 bg-gray-900">
+                                {/* Suggested Queries at Top */}
+                                {messages.length <= 1 && suggestedQueries.length > 0 && !isTyping && (
+                                    <div className="mb-4">
+                                        <p className="text-xs text-gray-400 mb-3 text-center">Try asking:</p>
+                                        <div className="flex flex-wrap gap-2 justify-center">
+                                            {suggestedQueries.slice(0, 4).map((query, index) => (
+                                                <button
+                                                    key={index}
+                                                    onClick={() => handleSuggestedQueryClick(query)}
+                                                    className="text-xs px-4 py-2 bg-gradient-to-r from-orange-500/20 to-orange-600/20 hover:from-orange-500/30 hover:to-orange-600/30 text-gray-200 hover:text-white rounded-full transition-all border border-orange-500/30 hover:border-orange-500/50 shadow-lg hover:shadow-orange-500/20 hover:scale-105"
+                                                >
+                                                    {query}
+                                                </button>
+                                            ))}
+                                        </div>
+                                    </div>
+                                )}
+
                                 {messages.map((message) => (
                                     <div
                                         key={message.id}
@@ -258,24 +276,6 @@ export default function ChatBot() {
                                 
                                 <div ref={messagesEndRef} />
                             </div>
-
-                            {/* Suggested Queries */}
-                            {messages.length <= 1 && suggestedQueries.length > 0 && !isTyping && (
-                                <div className="px-4 py-3 bg-gray-800/30 border-t border-gray-700/50">
-                                    <p className="text-xs text-gray-400 mb-2">Suggested questions:</p>
-                                    <div className="flex flex-wrap gap-2">
-                                        {suggestedQueries.slice(0, 4).map((query, index) => (
-                                            <button
-                                                key={index}
-                                                onClick={() => handleSuggestedQueryClick(query)}
-                                                className="text-xs px-3 py-1.5 bg-gray-700/50 hover:bg-orange-500/20 text-gray-300 hover:text-orange-400 rounded-full transition-all border border-gray-600/50 hover:border-orange-500/50"
-                                            >
-                                                {query}
-                                            </button>
-                                        ))}
-                                    </div>
-                                </div>
-                            )}
 
                             {/* Input Area */}
                             <div className="p-4 bg-gray-800/50 border-t border-gray-700/50">
