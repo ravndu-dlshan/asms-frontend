@@ -2,7 +2,37 @@ This is a [Next.js](https://nextjs.org) project bootstrapped with [`create-next-
 
 ## Getting Started
 
-First, run the development server:
+### 1. Environment Setup
+
+First, create a `.env.local` file in the root directory and configure the required environment variables:
+
+```bash
+# Copy the example file
+cp .env.example .env.local
+```
+
+Then edit `.env.local` with your configuration:
+
+```env
+# Backend API Base URL
+NEXT_PUBLIC_BASE_URL=http://localhost:8080
+
+# JWT Secret (for token verification in middleware)
+JWT_SECRET=your-jwt-secret-key
+
+# Chatbot URL (optional)
+NEXT_PUBLIC_CHATBOT_URL=http://localhost:8000
+```
+
+### 2. Install Dependencies
+
+```bash
+npm install
+# or
+yarn install
+```
+
+### 3. Start the Development Server
 
 ```bash
 npm run dev
@@ -15,6 +45,8 @@ bun dev
 ```
 
 Open [http://localhost:3000](http://localhost:3000) with your browser to see the result.
+
+**Note:** Make sure your backend server is running on `http://localhost:8080` before making API calls.
 
 You can start editing the page by modifying `app/page.tsx`. The page auto-updates as you edit the file.
 
