@@ -1,6 +1,8 @@
 'use client';
 import { useParams } from 'next/navigation';
 import ServiceCard from '../components/serviceCard';
+import Navbar from '../../components/navbar';
+import FooterSection from '../../components/footer';
 
 interface ServiceCardRecord {
     title: string;
@@ -86,12 +88,12 @@ const autoDetailingRecords: ServiceCardRecord[] = [
     {
         title: "Exterior Detailing",
         description: "Experience our exterior detailing to make sure the long lasting shining and elegance to your vehicle with professional care and premium products",
-        image: "/services/detailing1.jpg"
+        image: "/services/vdetailing1.jpg"
     },
     {
         title: "Interior Detailing",
         description: "Your vehicle interior will be so great; you wish you could remain inside for longer, come and feel the comfort of a professionally detailed cabin",
-        image: "/services/detailing2.jpg"
+        image: "/services/vdetailing2.jpg"
     }
 ];
 
@@ -124,7 +126,14 @@ const ShopServicePage = () => {
     }
 
 
-    return <ServiceCard services={services} title={title} description={description} />;
+    return (
+        <>
+            <Navbar />
+            <ServiceCard services={services} title={title} description={description} />
+            <FooterSection/>
+        </>
+    );
+
 };
 
 export default ShopServicePage;
