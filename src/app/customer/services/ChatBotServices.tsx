@@ -1,4 +1,5 @@
 import axios from 'axios';
+import { getCookie } from '@/app/lib/cookies';
 
 const CHATBOT_BASE_URL = process.env.NEXT_PUBLIC_CHATBOT_URL || 'http://localhost:8000';
 
@@ -13,8 +14,8 @@ const chatbotAxios = axios.create({
 // Add request interceptor to include auth token if needed
 chatbotAxios.interceptors.request.use(
     (config) => {
-        // Get auth token from localStorage
-        const token = localStorage.getItem('authToken');
+        // Get auth token from cookie
+        const token = getCookie('authToken');
         if (token) {
             config.headers.Authorization = `Bearer ${token}`;
         }
