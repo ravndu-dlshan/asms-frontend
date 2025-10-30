@@ -94,14 +94,17 @@ export default function Navbar() {
                             {servicesOpen && (
                                 <div className="absolute top-full left-0 pt-2 w-48 z-50">
                                     <div className="bg-[#2a2a2a] rounded shadow-lg py-2">
-                                        <Link href="/services/repair" className="block px-4 py-2 hover:bg-orange-500 transition-colors text-sm">
-                                            Repair Services
+                                        <Link href="/customer/shopServices/vehicleRepair" className="block px-4 py-2 hover:bg-orange-500 transition-colors text-sm">
+                                            Vehicle Repair
                                         </Link>
-                                        <Link href="/services/maintenance" className="block px-4 py-2 hover:bg-orange-500 transition-colors text-sm">
-                                            Maintenance
+                                        <Link href="/customer/shopServices/vehicleService" className="block px-4 py-2 hover:bg-orange-500 transition-colors text-sm">
+                                            Vehicle Servicing
                                         </Link>
-                                        <Link href="/services/diagnostics" className="block px-4 py-2 hover:bg-orange-500 transition-colors text-sm">
-                                            Diagnostics
+                                        <Link href="/customer/shopServices/collisionRepair" className="block px-4 py-2 hover:bg-orange-500 transition-colors text-sm">
+                                            Collision Repair
+                                        </Link>
+                                        <Link href="/customer/shopServices/autoDetailing" className="block px-4 py-2 hover:bg-orange-500 transition-colors text-sm">
+                                            Auto Detailing
                                         </Link>
                                     </div>
                                 </div>
@@ -136,7 +139,7 @@ export default function Navbar() {
 
                         {/* Profile Icon with Dropdown */}
                         {userInfo && (
-                            <div 
+                            <div
                                 className="relative"
                                 onMouseEnter={() => setProfileDropdownOpen(true)}
                                 onMouseLeave={() => setProfileDropdownOpen(false)}
@@ -152,7 +155,7 @@ export default function Navbar() {
                                     </span>
                                     <ChevronDown className="w-4 h-4 text-gray-400 ml-1" />
                                 </button>
-                                
+
                                 {profileDropdownOpen && (
                                     <div className="absolute top-full right-0 pt-2 w-64 z-50">
                                         <div className="bg-gradient-to-br from-[#2a2a2a] to-[#1f1f1f] rounded-xl shadow-2xl py-2 border border-gray-700/50 overflow-hidden">
@@ -171,7 +174,7 @@ export default function Navbar() {
                                                     </div>
                                                 </div>
                                             </div>
-                                            <button 
+                                            <button
                                                 onClick={handleLogout}
                                                 className="w-full flex items-center gap-3 px-5 py-3 hover:bg-gradient-to-r hover:from-red-500/20 hover:to-red-600/10 transition-all duration-200 text-sm text-left group"
                                             >
@@ -186,7 +189,7 @@ export default function Navbar() {
                     </div>
 
                     {/* Mobile Menu Button */}
-                    <button 
+                    <button
                         className="md:hidden text-white z-50"
                         onClick={() => setMobileMenuOpen(!mobileMenuOpen)}
                     >
@@ -197,17 +200,16 @@ export default function Navbar() {
 
             {/* Mobile Overlay */}
             {mobileMenuOpen && (
-                <div 
+                <div
                     className="fixed inset-0 bg-black bg-opacity-50 z-40 md:hidden"
                     onClick={closeMobileMenu}
                 />
             )}
 
             {/* Mobile Sidebar */}
-            <div 
-                className={`fixed top-0 right-0 h-full w-80 bg-[#1a1a1a] text-white z-50 transform transition-transform duration-300 ease-in-out md:hidden ${
-                    mobileMenuOpen ? 'translate-x-0' : 'translate-x-full'
-                }`}
+            <div
+                className={`fixed top-0 right-0 h-full w-80 bg-[#1a1a1a] text-white z-50 transform transition-transform duration-300 ease-in-out md:hidden ${mobileMenuOpen ? 'translate-x-0' : 'translate-x-full'
+                    }`}
             >
                 {/* Sidebar Header */}
                 <div className="flex items-center justify-between p-6 border-b border-gray-700">
@@ -325,7 +327,7 @@ export default function Navbar() {
                                         </div>
                                     </div>
                                 </div>
-                                <button 
+                                <button
                                     onClick={() => {
                                         handleLogout();
                                         closeMobileMenu();

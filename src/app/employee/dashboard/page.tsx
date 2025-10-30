@@ -55,26 +55,13 @@ export default function DashboardPage() {
   }
 
   return (
-    <main className="min-h-screen p-3">
-      <div className="max-w-7xl mx-auto space-y-8">
+    <main className="min-h-screen sm:p-4 md:p-3 lg:p-3">
+      <div className="max-w-7xl mx-auto space-y-6 sm:space-y-8">
         {/* Greeting Section */}
         <GreetingSection userName="John" />
-
-        {/* Stat Cards */}
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
-          <StatCard loading={loading} />
-        </div>
-
-        <QuickActions />
-
         {/* Jobs and Appointments */}
-        <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-          <div className="lg:col-span-2">
-            <ActiveJobs />
-          </div>
-          <div>
-            <RecentAppointments />
-          </div>
+        <div className="w-full lg:col-span-2">
+          <ActiveJobs />
         </div>
       </div>
     </main>

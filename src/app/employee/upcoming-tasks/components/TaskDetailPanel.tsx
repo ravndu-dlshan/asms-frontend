@@ -36,8 +36,8 @@ export default function TaskDetailPanel({ task }: TaskDetailPanelProps) {
         <span className={`inline-flex px-3 py-1 rounded-full text-xs font-semibold border ${getPriorityColor(task.priority ?? 'medium')}`}>
           {task.priority ?? 'medium'} Priority
         </span>
+       
       </div>
-
       {/* Content */}
       <div className="flex-1 overflow-y-auto p-6 space-y-6">
         {/* Vehicle Information */}
@@ -174,3 +174,14 @@ export default function TaskDetailPanel({ task }: TaskDetailPanelProps) {
     </div>
   );
 }
+
+const tasks = [
+  {
+    id: 'TSK-2024-001',
+    title: 'Oil Change & Filter Replacement',
+    vehicleModel: 'Toyota Camry 2020',
+    // ...other fields...
+    vehicleImageUrl: 'https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcTLQNUyPdKyLn02kH50qbo347MZ2dg-p7J8kBoeyHeYp8UuKiN1ZhIiR5RSLgWygYRkYLM&usqp=CAU'
+  },
+  // ...other tasks...
+];
