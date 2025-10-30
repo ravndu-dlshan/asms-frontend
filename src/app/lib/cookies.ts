@@ -54,4 +54,30 @@ export const clearAuthCookies = (): void => {
   deleteCookie('authToken');
   deleteCookie('token');
   deleteCookie('userRole');
+  deleteCookie('userInfo');
+};
+
+/**
+ * Set user info in cookie
+ * @param userInfo - User information object
+ * @param maxAge - Maximum age in seconds (default: 1 hour)
+ */
+export const setUserInfo = (userInfo: { firstName: string; lastName: string; email: string; role: string }, maxAge: number = 3600): void => {
+  setCookie('userInfo', JSON.stringify(userInfo), maxAge);
+};
+
+/**
+ * Get user info from cookie
+ * @returns User info object or null if not found
+ */
+export const getUserInfo = (): { firstName: string; lastName: string; email: string; role: string } | null => {
+  const userInfoStr = getCookie('userInfo');
+  if (!userInfoStr) return null;
+  
+  try {
+    return JSON.parse(userInfoStr);
+  } catch (error) {
+    console.error('Error parsing user info from cookie:', error);
+    return null;
+  }
 };

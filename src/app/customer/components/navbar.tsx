@@ -4,7 +4,7 @@ import { useState, useEffect } from 'react';
 import Link from 'next/link';
 import { Phone, ChevronDown, X, Menu, LogOut } from 'lucide-react';
 import { useRouter } from 'next/navigation';
-import { clearAuthCookies } from '@/app/lib/cookies';
+import { clearAuthCookies, getUserInfo } from '@/app/lib/cookies';
 
 interface UserInfo {
     firstName: string;
@@ -22,21 +22,14 @@ export default function Navbar() {
     const router = useRouter();
 
     useEffect(() => {
-        // Get user info from localStorage
-        const storedUserInfo = localStorage.getItem('userInfo');
+        // Get user info from cookie
+        const storedUserInfo = getUserInfo();
         if (storedUserInfo) {
-            try {
-                setUserInfo(JSON.parse(storedUserInfo));
-            } catch (error) {
-                console.error('Error parsing user info:', error);
-            }
+            setUserInfo(storedUserInfo);
         }
     }, []);
 
     const handleLogout = () => {
-        // Clear all auth-related data from localStorage
-        localStorage.removeItem('userInfo');
-        
         // Clear auth cookies
         clearAuthCookies();
         

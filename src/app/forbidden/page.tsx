@@ -3,6 +3,7 @@
 import { useRouter, useSearchParams } from 'next/navigation';
 import { useEffect, useState } from 'react';
 import { ShieldAlert, Lock } from 'lucide-react';
+import { getUserInfo } from '@/app/lib/cookies';
 
 export default function ForbiddenPage() {
     const router = useRouter();
@@ -20,19 +21,15 @@ export default function ForbiddenPage() {
             setRedirectUrl(url.pathname);
         } else {
           
-            const storedUserInfo = localStorage.getItem('userInfo');
+            const storedUserInfo = getUserInfo();
             if (storedUserInfo) {
-                try {
-                    const userInfo = JSON.parse(storedUserInfo);
-                    const role = userInfo.role || '';
-                    if (role === 'ROLE_ADMIN') setRedirectUrl('/admin');
-                    else if (role === 'ROLE_CUSTOMER') setRedirectUrl('/customer');
-                    else if (role === 'ROLE_EMPLOYEE') setRedirectUrl('/employee');
-                    else setRedirectUrl('/');
-                } catch (error) {
-                    console.error('Error parsing user info:', error);
-                    setRedirectUrl('/');
-                }
+                const role = storedUserInfo.role || '';
+                if (role === 'ROLE_ADMIN') setRedirectUrl('/admin');
+                else if (role === 'ROLE_CUSTOMER') setRedirectUrl('/customer');
+                else if (role === 'ROLE_EMPLOYEE') setRedirectUrl('/employee');
+                else setRedirectUrl('/');
+            } else {
+                setRedirectUrl('/');
             }
         }
     }, []);
