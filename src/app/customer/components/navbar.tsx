@@ -4,7 +4,7 @@ import { useState, useEffect } from 'react';
 import Link from 'next/link';
 import { Phone, ChevronDown, X, Menu, LogOut } from 'lucide-react';
 import { useRouter } from 'next/navigation';
-import Cookies from 'js-cookie';
+import { clearAuthCookies } from '@/app/lib/cookies';
 
 interface UserInfo {
     firstName: string;
@@ -36,12 +36,10 @@ export default function Navbar() {
     const handleLogout = () => {
         // Clear all auth-related data from localStorage
         localStorage.removeItem('userInfo');
-        localStorage.removeItem('authToken');
-        localStorage.removeItem('userRole');
-
-        // Clear auth token from cookies
-        Cookies.remove('authToken');
-
+        
+        // Clear auth cookies
+        clearAuthCookies();
+        
         // Navigate to home page
         router.replace('/');
     };

@@ -1,4 +1,5 @@
 import axiosInstance from '@/app/lib/axios';
+import { setCookie } from '@/app/lib/cookies';
 import axios from 'axios';
 
 export const registerUser= async (userData: {email: string, firstName: string, lastName: string, password : string, role:string})=>{
@@ -36,8 +37,13 @@ export const loginUser = async (loginData: { email: string; password: string }) 
 
     const data = response.data;
     if (data?.token) {
-      localStorage.setItem("authToken", data.token);
-      localStorage.setItem("userRole", data.role);
+      // Store token in secure cookie (1 hour expiry)
+      setCookie('authToken', data.token, 3600);
+      
+      // Store user role in cookie as well
+      if (data.role) {
+        setCookie('userRole', data.role, 3600);
+      }
     }
 
     return data;

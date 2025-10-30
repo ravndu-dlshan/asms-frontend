@@ -4,7 +4,6 @@ import { FormEvent, useState } from "react";
 import SignUp from "./SignUp";
 import ForgotPassword from "./ForgotPassword";
 import { loginUser } from "@/app/services/UserRegisterAndLoginServices";
-import Cookies from "js-cookie";
 import {useRouter} from "next/navigation";
 import ErrorPopUp from "@/app/components/ErrorPopuUp";
 import { Eye, EyeOff } from "lucide-react";
@@ -48,7 +47,7 @@ export default function Login() {
 			if (response && response.token) {
 				setMessage("Login Successful!");
 				
-				// Store user info in localStorage
+				// Store user info in localStorage (for UI purposes only)
 				localStorage.setItem(
 					"userInfo",
 					JSON.stringify({
@@ -59,8 +58,7 @@ export default function Login() {
 					})
 				);
 				
-				
-				Cookies.set("authToken", response.token, { expires: 7 }); 
+				// Token is now stored in secure cookie by loginUser service
 				
 				redirectUser(response.role);
 			} else {
