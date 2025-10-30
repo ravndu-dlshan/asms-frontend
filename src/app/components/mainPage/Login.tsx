@@ -7,6 +7,7 @@ import { loginUser } from "@/app/services/UserRegisterAndLoginServices";
 import {useRouter} from "next/navigation";
 import ErrorPopUp from "@/app/components/ErrorPopuUp";
 import { Eye, EyeOff } from "lucide-react";
+import { setUserInfo } from "@/app/lib/cookies";
 
 type View = "intro" | "login" | "signup" | "forgot-password";
 
@@ -47,16 +48,13 @@ export default function Login() {
 			if (response && response.token) {
 				setMessage("Login Successful!");
 				
-				// Store user info in localStorage (for UI purposes only)
-				localStorage.setItem(
-					"userInfo",
-					JSON.stringify({
+				// Store user info in secure cookie
+				setUserInfo({
 					firstName: response.firstName,
 					lastName: response.lastName,
 					email: response.email,
 					role: response.role,
-					})
-				);
+				}, 3600); // 1 hour expiry
 				
 				// Token is now stored in secure cookie by loginUser service
 				
