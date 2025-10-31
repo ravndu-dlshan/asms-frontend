@@ -1,16 +1,67 @@
 'use client';
 
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import { Calendar, Clock, Car, MapPin, AlertCircle, CheckCircle, XCircle, Loader, DollarSign, FileText } from 'lucide-react';
 import type { Appointment } from '../types';
+import axiosInstance from '@/app/lib/axios';
 
 interface AppointmentListProps {
-  appointments: Appointment[];
+  appointments?: Appointment[]; // optional; will fetch if not provided
   onCancelAppointment?: (appointmentId: string) => void;
 }
 
 export default function AppointmentList({ appointments, onCancelAppointment }: AppointmentListProps) {
   const [selectedStatus, setSelectedStatus] = useState<string>('all');
+  const [loading, setLoading] = useState(false);
+  const [error, setError] = useState<string | null>(null);
+  const [remoteAppointments, setRemoteAppointments] = useState<Appointment[]>([]);
+
+  // Fetch appointments from backend inside the card
+  useEffect(() => {
+    const fetchAppointments = async () => {
+      setLoading(true);
+      setError(null);
+      try {
+        const res = await axiosInstance.get('/api/customer/appointments');
+        const list = Array.isArray(res.data?.data) ? res.data.data : [];
+        const mapped: Appointment[] = list.map((a: any) => {
+          const dateIso: string = a.appointmentDate || a.date || new Date().toISOString();
+          const dateObj = new Date(dateIso);
+          const timeStr = `${String(dateObj.getHours()).padStart(2, '0')}:${String(dateObj.getMinutes()).padStart(2, '0')}`;
+          const vehicleId = (a.vehicleId ?? a.carId ?? '').toString();
+          const carDetails = {
+            id: vehicleId || `car-${Date.now()}`,
+            brand: a.vehicleMake || 'Vehicle',
+            model: a.vehicleModel || '',
+            year: a.vehicleYear || new Date().getFullYear(),
+            licensePlate: a.licensePlate || '',
+            color: a.color || '',
+          } as Appointment['carDetails'];
+
+          return {
+            id: (a.id ?? `apt-${Date.now()}`).toString(),
+            carId: vehicleId,
+            carDetails,
+            serviceType: a.type || 'project',
+            appointmentDate: dateIso,
+            appointmentTime: timeStr,
+            description: a.description || '',
+            status: (a.status || 'pending') as Appointment['status'],
+            priority: a.priority || 'medium',
+            estimatedCost: a.estimatedCost,
+            createdAt: a.createdAt || new Date().toISOString(),
+          } as Appointment;
+        });
+        setRemoteAppointments(mapped);
+      } catch (err: any) {
+        setError(err?.response?.data?.message || err?.message || 'Failed to fetch appointments');
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    fetchAppointments();
+  }, []);
 
   const statusOptions = [
     { value: 'all', label: 'All Appointments', color: 'text-gray-400' },
@@ -79,9 +130,10 @@ export default function AppointmentList({ appointments, onCancelAppointment }: A
     });
   };
 
+  const sourceAppointments = (appointments && appointments.length > 0) ? appointments : remoteAppointments;
   const filteredAppointments = selectedStatus === 'all' 
-    ? appointments 
-    : appointments.filter(apt => apt.status === selectedStatus);
+    ? sourceAppointments 
+    : sourceAppointments.filter(apt => apt.status === selectedStatus);
 
   return (
     <div className="bg-gradient-to-br from-gray-900 to-gray-800 rounded-xl p-6 border border-gray-700">
@@ -96,6 +148,13 @@ export default function AppointmentList({ appointments, onCancelAppointment }: A
           {filteredAppointments.length} {filteredAppointments.length === 1 ? 'appointment' : 'appointments'}
         </span>
       </div>
+
+      {loading && (
+        <div className="text-center text-gray-400 py-2">Loading appointments...</div>
+      )}
+      {error && (
+        <div className="text-center text-red-500 py-2">{error}</div>
+      )}
 
       {/* Status Filter */}
       <div className="flex flex-wrap gap-2 mb-6">

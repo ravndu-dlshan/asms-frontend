@@ -1,68 +1,29 @@
 'use client';
 
 import { useState } from 'react';
-import { Calendar, Clock, DollarSign, FileText } from 'lucide-react';
-import type { CarDetails, Appointment, ServiceOption } from '../types';
+import { Calendar, DollarSign } from 'lucide-react';
+import type { CarDetails, Appointment } from '../types';
+import axiosInstance from '@/app/lib/axios';
 
 interface AppointmentFormProps {
   cars: CarDetails[];
   onBookAppointment: (appointment: Omit<Appointment, 'id' | 'status' | 'createdAt'>) => void;
 }
 
-const serviceOptions: ServiceOption[] = [
-  {
-    id: 'maintenance',
-    name: 'Maintenance Service',
-    description: 'Regular maintenance including oil change, filter replacement, and inspection',
-    estimatedDuration: '2-3 hours',
-    estimatedCost: 150
-  },
-  {
-    id: 'repair',
-    name: 'Repair Service',
-    description: 'Diagnostic and repair of vehicle issues',
-    estimatedDuration: '3-6 hours',
-    estimatedCost: 300
-  },
-  {
-    id: 'diagnostic',
-    name: 'Diagnostic Check',
-    description: 'Comprehensive vehicle diagnostics and health check',
-    estimatedDuration: '1-2 hours',
-    estimatedCost: 80
-  },
-  {
-    id: 'tire',
-    name: 'Tire Service',
-    description: 'Tire replacement, rotation, or alignment',
-    estimatedDuration: '1-2 hours',
-    estimatedCost: 100
-  },
-  {
-    id: 'brake',
-    name: 'Brake Service',
-    description: 'Brake inspection, pad replacement, and fluid check',
-    estimatedDuration: '2-3 hours',
-    estimatedCost: 200
-  },
-  {
-    id: 'battery',
-    name: 'Battery Service',
-    description: 'Battery testing, charging, or replacement',
-    estimatedDuration: '30 min - 1 hour',
-    estimatedCost: 120
-  }
-];
-
 export default function AppointmentForm({ cars, onBookAppointment }: AppointmentFormProps) {
   const [selectedCarId, setSelectedCarId] = useState('');
-  const [serviceType, setServiceType] = useState('');
   const [appointmentDate, setAppointmentDate] = useState('');
   const [appointmentTime, setAppointmentTime] = useState('');
   const [description, setDescription] = useState('');
   const [errors, setErrors] = useState<Record<string, string>>({});
+  const [submitting, setSubmitting] = useState(false);
+  const [submitError, setSubmitError] = useState<string | null>(null);
 
-  const selectedService = serviceOptions.find(s => s.id === serviceType);
+  // Project details (always required for this form)
+  const [projectTitle, setProjectTitle] = useState('');
+  const [projectEstimatedCost, setProjectEstimatedCost] = useState('');
+  const [projectEstimatedCompletion, setProjectEstimatedCompletion] = useState('');
+
   const selectedCar = cars.find(c => c.id === selectedCarId);
 
   const availableTimeSlots = [
@@ -86,42 +47,74 @@ export default function AppointmentForm({ cars, onBookAppointment }: Appointment
     const newErrors: Record<string, string> = {};
 
     if (!selectedCarId) newErrors.car = 'Please select a vehicle';
-    if (!serviceType) newErrors.service = 'Please select a service type';
     if (!appointmentDate) newErrors.date = 'Please select a date';
     if (!appointmentTime) newErrors.time = 'Please select a time';
+    if (!projectTitle) newErrors.projectTitle = 'Please provide a project title';
+    if (!projectEstimatedCost) newErrors.projectEstimatedCost = 'Please provide estimated cost';
+    if (!projectEstimatedCompletion) newErrors.projectEstimatedCompletion = 'Please provide estimated completion';
 
     setErrors(newErrors);
     return Object.keys(newErrors).length === 0;
   };
 
-  const handleSubmit = (e: React.FormEvent) => {
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
 
     if (!validateForm()) return;
     if (!cars || cars.length === 0) return;
     if (!selectedCar) return;
 
+    setSubmitting(true);
+    setSubmitError(null);
+
+    try {
+      // Combine date and time into ISO string (local time)
+      const dateTimeIso = new Date(`${appointmentDate}T${appointmentTime}:00`).toISOString();
+
+      // 1) Create appointment
+      await axiosInstance.post('/api/customer/appointments', {
+        vehicleId: Number(selectedCarId),
+        appointmentDate: dateTimeIso,
+      });
+
+      // 2) Create a WORK ORDER for the project/modification
+      await axiosInstance.post('/api/customer/work-orders', {
+        vehicleId: Number(selectedCarId),
+        type: 'PROJECT',
+        title: projectTitle,
+        description: description || 'Project work order requested with appointment',
+        estimatedCost: Number(projectEstimatedCost),
+        estimatedCompletion: new Date(projectEstimatedCompletion).toISOString(),
+      });
+
+      // Update local UI list as before
     const appointmentData: Omit<Appointment, 'id' | 'status' | 'createdAt'> = {
       carId: selectedCarId,
       carDetails: selectedCar,
-      serviceType,
+        serviceType: 'project',
       appointmentDate,
       appointmentTime,
       description,
-      priority: selectedService?.estimatedCost && selectedService.estimatedCost > 250 ? 'high' : 'medium',
-      estimatedCost: selectedService?.estimatedCost
+        priority: Number(projectEstimatedCost) > 250 ? 'high' : 'medium',
+        estimatedCost: Number(projectEstimatedCost)
     };
-
     onBookAppointment(appointmentData);
     resetForm();
+    } catch (err: any) {
+      setSubmitError(err?.response?.data?.message || err?.message || 'Failed to create appointment');
+    } finally {
+      setSubmitting(false);
+    }
   };
 
   const resetForm = () => {
     setSelectedCarId('');
-    setServiceType('');
     setAppointmentDate('');
     setAppointmentTime('');
     setDescription('');
+    setProjectTitle('');
+    setProjectEstimatedCost('');
+    setProjectEstimatedCompletion('');
     setErrors({});
   };
 
@@ -162,56 +155,59 @@ export default function AppointmentForm({ cars, onBookAppointment }: Appointment
             {errors.car && <p className="text-red-500 text-xs mt-1">{errors.car}</p>}
           </div>
 
-          {/* Service Selection */}
+          {/* Project Details */}
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+            <div className="md:col-span-1">
+              <label className="block text-sm font-medium text-gray-300 mb-2">
+                Project Title *
+              </label>
+              <input
+                type="text"
+                value={projectTitle}
+                onChange={(e) => setProjectTitle(e.target.value)}
+                className={`w-full px-4 py-3 bg-gray-900 border rounded-lg text-white focus:outline-none focus:ring-2 ${
+                  errors.projectTitle ? 'border-red-500 focus:ring-red-500' : 'border-gray-700 focus:ring-orange-500'
+                }`}
+                placeholder="e.g., Custom Body Kit Installation"
+              />
+              {errors.projectTitle && (
+                <p className="text-red-500 text-xs mt-1">{errors.projectTitle}</p>
+              )}
+            </div>
           <div>
             <label className="block text-sm font-medium text-gray-300 mb-2">
-              Service Type *
+                Estimated Cost *
             </label>
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
-              {serviceOptions.map((service) => (
-                <button
-                  key={service.id}
-                  type="button"
-                  onClick={() => setServiceType(service.id)}
-                  className={`p-4 rounded-lg border-2 text-left transition-all ${
-                    serviceType === service.id
-                      ? 'border-orange-500 bg-orange-500/10'
-                      : 'border-gray-700 bg-gray-900/50 hover:border-gray-600'
-                  }`}
-                >
-                  <div className="flex items-start justify-between">
-                    <div className="flex-1">
-                      <h3 className="font-semibold text-white mb-1">{service.name}</h3>
-                      <p className="text-sm text-gray-400 mb-2">{service.description}</p>
-                      <div className="flex items-center space-x-4 text-xs">
-                        <span className="text-gray-400 flex items-center">
-                          <Clock className="w-3 h-3 mr-1" />
-                          {service.estimatedDuration}
-                        </span>
-                        <span className="text-orange-400 flex items-center font-medium">
-                          <DollarSign className="w-3 h-3 mr-1" />
-                          ${service.estimatedCost}
-                        </span>
-                      </div>
-                    </div>
-                    <div
-                      className={`w-5 h-5 rounded-full border-2 flex items-center justify-center ml-3 ${
-                        serviceType === service.id
-                          ? 'border-orange-500 bg-orange-500'
-                          : 'border-gray-600'
-                      }`}
-                    >
-                      {serviceType === service.id && (
-                        <div className="w-2 h-2 rounded-full bg-white" />
+              <input
+                type="number"
+                min="0"
+                value={projectEstimatedCost}
+                onChange={(e) => setProjectEstimatedCost(e.target.value)}
+                className={`w-full px-4 py-3 bg-gray-900 border rounded-lg text-white focus:outline-none focus:ring-2 ${
+                  errors.projectEstimatedCost ? 'border-red-500 focus:ring-red-500' : 'border-gray-700 focus:ring-orange-500'
+                }`}
+                placeholder="2500"
+              />
+              {errors.projectEstimatedCost && (
+                <p className="text-red-500 text-xs mt-1">{errors.projectEstimatedCost}</p>
                       )}
                     </div>
-                  </div>
-                </button>
-              ))}
+            <div>
+              <label className="block text-sm font-medium text-gray-300 mb-2">
+                Estimated Completion *
+              </label>
+              <input
+                type="datetime-local"
+                value={projectEstimatedCompletion}
+                onChange={(e) => setProjectEstimatedCompletion(e.target.value)}
+                className={`w-full px-4 py-3 bg-gray-900 border rounded-lg text-white focus:outline-none focus:ring-2 ${
+                  errors.projectEstimatedCompletion ? 'border-red-500 focus:ring-red-500' : 'border-gray-700 focus:ring-orange-500'
+                }`}
+              />
+              {errors.projectEstimatedCompletion && (
+                <p className="text-red-500 text-xs mt-1">{errors.projectEstimatedCompletion}</p>
+              )}
             </div>
-            {errors.service && (
-              <p className="text-red-500 text-xs mt-1">{errors.service}</p>
-            )}
           </div>
 
           {/* Date Selection */}
@@ -272,26 +268,30 @@ export default function AppointmentForm({ cars, onBookAppointment }: Appointment
             />
           </div>
 
-          {/* Estimated Cost Summary */}
-          {selectedService && (
+          
+
+          {/* Cost Summary */}
+          {projectEstimatedCost && (
             <div className="bg-gray-800/50 rounded-lg p-4 border border-gray-700">
               <div className="flex items-center space-x-2 mb-2">
                 <DollarSign className="w-5 h-5 text-orange-400" />
                 <h3 className="font-semibold text-white">Estimated Cost</h3>
               </div>
-              <p className="text-2xl font-bold text-orange-500">${selectedService.estimatedCost}</p>
-              <p className="text-sm text-gray-400 mt-1">
-                Estimated duration: {selectedService.estimatedDuration}
-              </p>
+              <p className="text-2xl font-bold text-orange-500">${projectEstimatedCost}</p>
             </div>
           )}
 
           {/* Submit Button */}
+          {submitError && (
+            <div className="text-red-500 text-sm">{submitError}</div>
+          )}
+
           <button
             type="submit"
-            className="w-full py-3 bg-gradient-to-r from-orange-500 to-orange-600 text-white rounded-lg hover:from-orange-600 hover:to-orange-700 transition-all font-semibold text-lg shadow-lg shadow-orange-500/20 transform hover:scale-[1.02]"
+            disabled={submitting}
+            className="w-full py-3 bg-gradient-to-r from-orange-500 to-orange-600 text-white rounded-lg hover:from-orange-600 hover:to-orange-700 transition-all font-semibold text-lg shadow-lg shadow-orange-500/20 transform hover:scale-[1.02] disabled:opacity-60 disabled:cursor-not-allowed"
           >
-            Book Appointment
+            {submitting ? 'Booking...' : 'Book Appointment'}
           </button>
         </form>
       )}
