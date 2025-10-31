@@ -41,3 +41,12 @@ body {
   animation: fadeIn 0.4s ease-out forwards;
   animation-fill-mode: both;
 }
+
+/* Animation delay utilities for loading dots */
+.animation-delay-200 {
+  animation-delay: 0.2s;
+}
+
+.animation-delay-400 {
+  animation-delay: 0.4s;
+}
