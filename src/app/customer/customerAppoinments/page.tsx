@@ -8,23 +8,41 @@ import CarDetailsForm from './components/CarDetailsForm';
 import AppointmentForm from './components/AppointmentForm';
 import AppointmentList from './components/AppointmentList';
 import type { CarDetails, Appointment } from './types';
+import axiosInstance from '@/app/lib/axios';
 
 export default function CustomerAppointments() {
   const [cars, setCars] = useState<CarDetails[]>([]);
   const [appointments, setAppointments] = useState<Appointment[]>([]);
+  const [vehicleLoading, setVehicleLoading] = useState(false);
+  const [vehicleError, setVehicleError] = useState<string | null>(null);
 
-  // Load data from localStorage on mount
+  // Fetch vehicles for the authenticated customer
   useEffect(() => {
-    const savedCars = localStorage.getItem('customerCars');
-    const savedAppointments = localStorage.getItem('customerAppointments');
-
-    if (savedCars) {
-      setCars(JSON.parse(savedCars));
-    }
-
-    if (savedAppointments) {
-      setAppointments(JSON.parse(savedAppointments));
-    }
+    const fetchVehicles = async () => {
+      setVehicleLoading(true);
+      setVehicleError(null);
+      try {
+        const response = await axiosInstance.get('/api/customer/vehicles');
+        // Expecting { success: true, data: Vehicle[] }
+        const list = Array.isArray(response.data?.data) ? response.data.data : [];
+        const mapped: CarDetails[] = list.map((v: any) => ({
+          id: v.id?.toString?.() ?? `car-${Date.now()}`,
+          brand: v.make,
+          model: v.model,
+          year: v.year,
+          licensePlate: v.licensePlate,
+          color: v.color,
+          mileage: v.mileage ? String(v.mileage) : '',
+          vinNumber: v.vinNumber ?? '',
+        }));
+        setCars(mapped);
+      } catch (err: any) {
+        setVehicleError(err?.response?.data?.message || err?.message || 'Failed to fetch vehicles');
+      } finally {
+        setVehicleLoading(false);
+      }
+    };
+    fetchVehicles();
   }, []);
 
   // Save cars to localStorage whenever it changes
@@ -79,6 +97,12 @@ export default function CustomerAppointments() {
 
           {/* Car Details Section */}
           <CarDetailsForm onAddCar={handleAddCar} existingCars={cars} />
+          {vehicleLoading && (
+            <div className="text-center text-gray-400 py-4">Loading vehicles...</div>
+          )}
+          {vehicleError && (
+            <div className="text-center text-red-500 py-4">{vehicleError}</div>
+          )}
 
           {/* Appointment Form Section */}
           <div className="mb-8">
