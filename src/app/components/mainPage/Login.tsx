@@ -28,7 +28,7 @@ export default function Login() {
 		}else if (role==="CUSTOMER"){
 			router.push("/customer");
 		}else if (role==="EMPLOYEE"){
-			router.push("/employee");
+			router.push("/employee/dashboard");
 		}else{
 			router.push("/");
 		}

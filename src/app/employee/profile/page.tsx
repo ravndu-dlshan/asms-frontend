@@ -1,11 +1,8 @@
 "use client";
 
 import React, { useState, useEffect } from "react";
-import {
-  User,
-  Briefcase,
-} from "lucide-react";
-import { getUserFromLocalStorage } from "../utils/getUserFromLocalStorage";
+import { User, Briefcase } from "lucide-react";
+import { getUserFromStorage } from "../utils/getUserFromCookies";
 
 interface UserProfile {
   name?: string;
@@ -21,23 +18,18 @@ interface UserProfile {
 export default function ProfileSection() {
   const [user, setUser] = useState<UserProfile | null>(null);
 
-  // Load user from LocalStorage
   useEffect(() => {
-    const storedUser = getUserFromLocalStorage();
+    const storedUser = getUserFromStorage();
     if (storedUser) {
       setUser({
-        name: `${storedUser.firstName || ""} ${
-          storedUser.lastName || ""
-        }`.trim(),
-        email: storedUser.email || "",
-        role: storedUser.role
-          ? storedUser.role.charAt(0).toUpperCase() + storedUser.role.slice(1).toLowerCase()
-          : "",
+        name: `${storedUser.firstName} ${storedUser.lastName}`.trim(),
+        email: storedUser.email,
+        role: storedUser.role,
         phone: "",
         address: "",
         dateOfBirth: "",
         joinedDate: "",
-        profileImage: "", // not used anymore
+        profileImage: "",
       });
     }
   }, []);
