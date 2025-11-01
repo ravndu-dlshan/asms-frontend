@@ -5,6 +5,7 @@ const BASE_URL= process.env.NEXT_PUBLIC_BASE_URL;
 //Register New User
 export const registerUser= async (userData: {email: string, firstName: string, lastName: string, password : string, role:string})=>{
     try{
+        console.log('Registering user at URL:', `${BASE_URL}/api/auth/register`);
         const response = await axios.post(`${BASE_URL}/api/auth/register`, userData);
         return response.data;
     }catch(error){
@@ -31,7 +32,7 @@ export const loginUser = async (loginData: { email: string; password: string }) 
     const response = await axios.post(`${BASE_URL}/api/auth/login`, loginData);
 
     const data = response.data;
-    if (data?.token) {
+    if (data?.token && typeof window !== 'undefined') {
       localStorage.setItem("authToken", data.token);
       localStorage.setItem("userRole", data.role);
       axios.defaults.headers.common["Authorization"] = `Bearer ${data.token}`;

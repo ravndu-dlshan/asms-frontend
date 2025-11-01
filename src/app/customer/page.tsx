@@ -1,12 +1,18 @@
 "use client";
 
-import React from 'react'
+import React, { useEffect, useState } from 'react';
 
-export default function page() {
+export default function Customer() {
+  const [userInfo, setUserInfo] = useState('');
+
+  useEffect(() => {
+    setUserInfo(localStorage.getItem("userInfo") || '');
+  }, []);
+
   return (
     <div>
-      <h1>{localStorage.getItem("userInfo")}</h1>
+      <h2>{userInfo}</h2>
       <h1>Hi this is Customer Here!</h1>
     </div>
-  )
+  );
 }
