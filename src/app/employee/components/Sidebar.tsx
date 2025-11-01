@@ -2,7 +2,7 @@
 
 import { useState, useEffect } from "react";
 import Link from "next/link";
-import { usePathname } from "next/navigation";
+import { usePathname, useRouter } from "next/navigation";
 import {
   LayoutDashboard,
   ClipboardList,
@@ -13,9 +13,7 @@ import {
   X,
   User,
 } from "lucide-react";
-import { getUserFromLocalStorage } from "../utils/getUserFromLocalStorage";
-import { useRouter } from "next/navigation";
-
+import { getUserFromStorage } from "../utils/getUserFromCookies";
 
 interface MenuItem {
   href: string;
@@ -70,22 +68,29 @@ const SIDEBAR_CONFIG = {
 };
 
 export default function Sidebar({ user, onLogout }: SidebarProps) {
-  const [sidebarOpen, setSidebarOpen] = useState(true);
-  const [currentUser, setCurrentUser] = useState<UserProfile | null>(null);
   const [isLoading, setIsLoading] = useState(true);
   const pathname = usePathname();
   const router = useRouter();
+  const [currentUser, setCurrentUser] = useState<UserProfile | null>(null);
+  const [sidebarOpen, setSidebarOpen] = useState(true);
 
   useEffect(() => {
-    // Get user data from localStorage
-    if (typeof window !== "undefined") {
-      const userData = getUserFromLocalStorage();
-      setCurrentUser(userData);
-      setIsLoading(false);
-    } else {
-      setIsLoading(false);
-    }
+    const userData = getUserFromStorage();
+    if (userData) setCurrentUser(userData);
+
+    setIsLoading(false); // ✅ FIX: stop loading after fetching user
   }, []);
+
+  const handleLogout = () => {
+    document.cookie =
+      "authToken=; expires=Thu, 01 Jan 1970 00:00:00 UTC; path=/;";
+    document.cookie =
+      "userInfo=; expires=Thu, 01 Jan 1970 00:00:00 UTC; path=/;";
+
+    router.push("/");
+  };
+
+  const displayUser = currentUser;
 
   const isActive = (href: string) => {
     if (href === "/employee/dashboard") {
@@ -93,24 +98,6 @@ export default function Sidebar({ user, onLogout }: SidebarProps) {
     }
     return pathname.startsWith(href);
   };
-
-  const handleLogout = () => {
-    if (onLogout) {
-      onLogout();
-    } else {
-      // Clear user data
-      localStorage.removeItem("user");
-
-      router.push("/login");
-    }
-  };
-
-  // Use prop user if provided, otherwise use localStorage user
-  const displayUser = currentUser;
-
-  console.log("Display user:", displayUser);
-  console.log("Current user:", currentUser);
-  console.log("User prop:", user);
 
   return (
     <aside
@@ -158,13 +145,12 @@ export default function Sidebar({ user, onLogout }: SidebarProps) {
         <button
           onClick={() => setSidebarOpen(!sidebarOpen)}
           className="text-gray-400 hover:text-white transition-colors"
-          aria-label={sidebarOpen ? "Collapse sidebar" : "Expand sidebar"}
         >
           {sidebarOpen ? <X size={20} /> : <Menu size={20} />}
         </button>
       </div>
 
-      {/* User Profile Section */}
+      {/* User Profile */}
       <Link
         href="/employee/profile"
         className={`p-4 border-b border-gray-800 block transition hover:bg-gray-800/50 ${
@@ -180,7 +166,7 @@ export default function Sidebar({ user, onLogout }: SidebarProps) {
             {displayUser?.avatar ? (
               <img
                 src={displayUser.avatar}
-                alt={`${displayUser?.firstName} ${displayUser?.lastName}`}
+                alt={`${displayUser.firstName} ${displayUser.lastName}`}
                 className="w-full h-full rounded-full object-cover"
               />
             ) : (
@@ -195,11 +181,9 @@ export default function Sidebar({ user, onLogout }: SidebarProps) {
                   <div className="h-3 bg-gray-700 rounded w-16 animate-pulse"></div>
                 </>
               ) : displayUser ? (
-                <>
-                  <p className="text-sm font-semibold text-white truncate">
-                    {displayUser.firstName} {displayUser.lastName}
-                  </p>
-                </>
+                <p className="text-sm font-semibold text-white truncate">
+                  {displayUser.firstName} {displayUser.lastName}
+                </p>
               ) : (
                 <>
                   <p className="text-sm font-semibold text-white truncate">
@@ -215,7 +199,7 @@ export default function Sidebar({ user, onLogout }: SidebarProps) {
         </div>
       </Link>
 
-      {/* Navigation Menu */}
+      {/* Navigation */}
       <nav className="p-4 space-y-2 flex-1 overflow-y-auto">
         {MENU_ITEMS.map((item) => {
           const Icon = item.icon;
@@ -233,17 +217,13 @@ export default function Sidebar({ user, onLogout }: SidebarProps) {
               title={!sidebarOpen ? item.label : undefined}
             >
               <Icon className="w-5 h-5 flex-shrink-0" />
-              {sidebarOpen && (
-                <>
-                  <span className="font-medium">{item.label}</span>
-                </>
-              )}
+              {sidebarOpen && <span className="font-medium">{item.label}</span>}
             </Link>
           );
         })}
       </nav>
 
-      {/* Bottom Actions */}
+      {/* Logout Button */}
       <div
         className={`p-4 border-t border-gray-800 space-y-2 ${
           !sidebarOpen ? "flex justify-center" : ""
@@ -256,7 +236,6 @@ export default function Sidebar({ user, onLogout }: SidebarProps) {
               ? "justify-start space-x-3 px-4 w-full"
               : "justify-center w-12 h-12"
           } py-3 text-red-400 hover:text-red-300 hover:bg-red-900/20 rounded-lg transition-colors`}
-          title={!sidebarOpen ? "Logout" : undefined}
         >
           <LogOut className="w-5 h-5 flex-shrink-0" />
           {sidebarOpen && <span>Logout</span>}

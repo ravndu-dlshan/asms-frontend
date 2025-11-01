@@ -2,13 +2,13 @@
 
 import { Bell, User } from "lucide-react";
 import { useState, useEffect } from "react";
+import { getUserFromStorage } from "../../utils/getUserFromCookies";
 import Link from "next/link";
 import NotificationPanel from "./NotificationPanel";
 import StatCard from "./StatCard";
 import QuickActions from "./QuickAccess";
 import RecentNotifications from "./RecentNotifications";
 import Image from "next/image";
-import { getUserFromLocalStorage } from "../../utils/getUserFromLocalStorage";
 
 interface Notification {
   id: number;
@@ -30,20 +30,17 @@ export default function GreetingSection({ userImage }: GreetingSectionProps) {
 
   // Get user firstName from localStorage
   useEffect(() => {
-    const user = getUserFromLocalStorage();
-    if (user && user.firstName) {
+    const user = getUserFromStorage();
+    if (user?.firstName) {
       setName(user.firstName);
     }
   }, []);
 
   const currentDate = new Date();
   const currentHour = currentDate.getHours();
-  const greeting =
-    currentHour < 12
-      ? "Good Morning"
-      : currentHour < 18
-      ? "Good Afternoon"
-      : "Good Evening";
+  const greeting = currentHour < 12 ? "Good Morning" :
+                   currentHour < 18 ? "Good Afternoon" :
+                   "Good Evening";
 
   // Get most recent notification
   const recentNotification = notifications.length > 0 ? notifications[0] : null;
