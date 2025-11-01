@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import {
@@ -13,6 +13,9 @@ import {
   X,
   User,
 } from "lucide-react";
+import { getUserFromLocalStorage } from "../utils/getUserFromLocalStorage";
+import { useRouter } from "next/navigation";
+
 
 interface MenuItem {
   href: string;
@@ -22,7 +25,9 @@ interface MenuItem {
 }
 
 interface UserProfile {
-  name: string;
+  firstName: string;
+  lastName: string;
+  email: string;
   role: string;
   avatar?: string;
 }
@@ -31,11 +36,6 @@ interface SidebarProps {
   user?: UserProfile;
   onLogout?: () => void;
 }
-
-const DEFAULT_USER: UserProfile = {
-  name: "John Smith",
-  role: "Technician",
-};
 
 const MENU_ITEMS: MenuItem[] = [
   {
@@ -69,12 +69,23 @@ const SIDEBAR_CONFIG = {
   brandSubtitle: "Employee Portal",
 };
 
-export default function Sidebar({
-  user = DEFAULT_USER,
-  onLogout,
-}: SidebarProps) {
+export default function Sidebar({ user, onLogout }: SidebarProps) {
   const [sidebarOpen, setSidebarOpen] = useState(true);
+  const [currentUser, setCurrentUser] = useState<UserProfile | null>(null);
+  const [isLoading, setIsLoading] = useState(true);
   const pathname = usePathname();
+  const router = useRouter();
+
+  useEffect(() => {
+    // Get user data from localStorage
+    if (typeof window !== "undefined") {
+      const userData = getUserFromLocalStorage();
+      setCurrentUser(userData);
+      setIsLoading(false);
+    } else {
+      setIsLoading(false);
+    }
+  }, []);
 
   const isActive = (href: string) => {
     if (href === "/employee/dashboard") {
@@ -87,12 +98,19 @@ export default function Sidebar({
     if (onLogout) {
       onLogout();
     } else {
-      // Default logout behavior
-      console.log("Logout clicked");
-      // Add your logout logic here
-      // Example: router.push('/login');
+      // Clear user data
+      localStorage.removeItem("user");
+
+      router.push("/login");
     }
   };
+
+  // Use prop user if provided, otherwise use localStorage user
+  const displayUser = currentUser;
+
+  console.log("Display user:", displayUser);
+  console.log("Current user:", currentUser);
+  console.log("User prop:", user);
 
   return (
     <aside
@@ -159,10 +177,10 @@ export default function Sidebar({
           }`}
         >
           <div className="w-10 h-10 bg-gradient-to-br from-orange-500 to-orange-600 rounded-full flex items-center justify-center flex-shrink-0">
-            {user.avatar ? (
+            {displayUser?.avatar ? (
               <img
-                src={user.avatar}
-                alt={user.name}
+                src={displayUser.avatar}
+                alt={`${displayUser?.firstName} ${displayUser?.lastName}`}
                 className="w-full h-full rounded-full object-cover"
               />
             ) : (
@@ -171,10 +189,27 @@ export default function Sidebar({
           </div>
           {sidebarOpen && (
             <div className="overflow-hidden">
-              <p className="text-sm font-semibold text-white truncate">
-                {user.name}
-              </p>
-              <p className="text-xs text-gray-400 truncate">{user.role}</p>
+              {isLoading ? (
+                <>
+                  <div className="h-4 bg-gray-700 rounded w-20 mb-1 animate-pulse"></div>
+                  <div className="h-3 bg-gray-700 rounded w-16 animate-pulse"></div>
+                </>
+              ) : displayUser ? (
+                <>
+                  <p className="text-sm font-semibold text-white truncate">
+                    {displayUser.firstName} {displayUser.lastName}
+                  </p>
+                </>
+              ) : (
+                <>
+                  <p className="text-sm font-semibold text-white truncate">
+                    User Not Found
+                  </p>
+                  <p className="text-xs text-gray-400 truncate">
+                    Please log in
+                  </p>
+                </>
+              )}
             </div>
           )}
         </div>

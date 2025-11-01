@@ -8,6 +8,7 @@ import StatCard from "./StatCard";
 import QuickActions from "./QuickAccess";
 import RecentNotifications from "./RecentNotifications";
 import Image from "next/image";
+import { getUserFromLocalStorage } from "../../utils/getUserFromLocalStorage";
 
 interface Notification {
   id: number;
@@ -18,18 +19,22 @@ interface Notification {
 }
 
 interface GreetingSectionProps {
-  userName?: string;
   userImage?: string;
 }
 
-export default function GreetingSection({
-  userName = "John Smith",
-  userImage,
-}: GreetingSectionProps) {
-  const [name] = useState(userName);
+export default function GreetingSection({ userImage }: GreetingSectionProps) {
+  const [name, setName] = useState("User");
   const [image] = useState(userImage);
   const [showNotifications, setShowNotifications] = useState(false);
   const [notifications, setNotifications] = useState<Notification[]>([]);
+
+  // Get user firstName from localStorage
+  useEffect(() => {
+    const user = getUserFromLocalStorage();
+    if (user && user.firstName) {
+      setName(user.firstName);
+    }
+  }, []);
 
   const currentDate = new Date();
   const currentHour = currentDate.getHours();
@@ -76,10 +81,7 @@ export default function GreetingSection({
       {/* Greeting Card */}
       <div>
         <div className="flex-1 bg-gradient-to-br from-gray-800 to-gray-900 rounded-2xl p-5 border border-gray-700 flex flex-col justify-between relative overflow-hidden">
-          {/* Subtle orange gradient overlay */}
           <div className="absolute inset-0 bg-gradient-to-br from-orange-500/5 via-transparent to-orange-600/5 pointer-events-none" />
-
-          {/* Top orange accent line */}
           <div className="absolute top-0 left-0 right-0 h-px bg-gradient-to-r from-transparent via-orange-500/40 to-transparent" />
 
           <div className="relative z-10">
@@ -91,7 +93,6 @@ export default function GreetingSection({
             </p>
           </div>
 
-          {/* Bottom orange accent line */}
           <div className="absolute bottom-0 left-0 right-0 h-px bg-gradient-to-r from-transparent via-orange-500/20 to-transparent" />
         </div>
         <StatCard />
@@ -99,13 +100,9 @@ export default function GreetingSection({
 
       {/* Car Image Card */}
       <div className="flex-1 bg-gradient-to-br from-gray-800 to-gray-900 rounded-2xl p-3 border border-gray-700 flex flex-col items-center justify-start relative overflow-hidden">
-        {/* Subtle orange gradient overlay */}
         <div className="absolute inset-0 bg-gradient-to-br from-orange-500/5 via-transparent to-orange-600/5 pointer-events-none" />
-
-        {/* Top orange accent line */}
         <div className="absolute top-0 left-0 right-0 h-px bg-gradient-to-r from-transparent via-orange-500/40 to-transparent" />
 
-        {/* Car Image */}
         <div className="relative">
           <Image
             src="/suvCar.png"
@@ -119,7 +116,6 @@ export default function GreetingSection({
           <p className="text-3xl font-bold text-white">
             Car<span className="text-orange-500">vo</span>
           </p>
-          {/* Time Display - moved below Carvo */}
           <div className="mt-3">
             <p className="text-white text-lg font-semibold">
               {currentDate.toLocaleTimeString("en-US", {
@@ -137,22 +133,17 @@ export default function GreetingSection({
           </div>
         </div>
 
-        {/* Bottom orange accent line */}
         <div className="absolute bottom-0 left-0 right-0 h-px bg-gradient-to-r from-transparent via-orange-500/20 to-transparent" />
       </div>
 
       {/* Profile + Notification Card */}
       <div className="relative">
         <div className="flex-1 bg-gradient-to-br from-gray-800 to-gray-900 rounded-2xl p-5 border border-gray-700 flex flex-col justify-between relative overflow-hidden">
-          {/* Subtle orange gradient overlay */}
           <div className="absolute inset-0 bg-gradient-to-br from-orange-500/5 via-transparent to-orange-600/5 pointer-events-none" />
-
-          {/* Top orange accent line */}
           <div className="absolute top-0 left-0 right-0 h-px bg-gradient-to-r from-transparent via-orange-500/40 to-transparent" />
 
           <div className="flex flex-col items-center md:items-end space-y-4 relative z-10">
             <div className="flex items-center space-x-4">
-              {/*Notification Button */}
               <button
                 type="button"
                 aria-label="Notifications"
@@ -163,7 +154,6 @@ export default function GreetingSection({
                 <span className="absolute top-2 right-2 w-3 h-3 bg-red-500 rounded-full shadow-lg shadow-red-500/50"></span>
               </button>
 
-              {/* 👤 Profile Section */}
               <Link href="/employee/profile">
                 <div className="flex items-center space-x-3">
                   <div className="relative w-12 h-12 rounded-full overflow-hidden border-2 border-orange-500 bg-gradient-to-br from-orange-500 to-orange-600 flex items-center justify-center shadow-lg shadow-orange-500/30">
@@ -187,15 +177,13 @@ export default function GreetingSection({
             </div>
           </div>
 
-          {/* Bottom orange accent line */}
           <div className="absolute bottom-0 left-0 right-0 h-px bg-gradient-to-r from-transparent via-orange-500/20 to-transparent" />
         </div>
 
-        {/* 🔹 Notification Panel - positioned absolutely relative to parent */}
         {showNotifications && (
           <div className="absolute top-0 right-0 z-50">
             <NotificationPanel 
-              onClose={handleCloseNotifications} 
+              onClose={() => setShowNotifications(false)} 
               notifications={notifications}
               setNotifications={setNotifications}
             />
@@ -206,7 +194,6 @@ export default function GreetingSection({
           <QuickActions />
         </div>
         
-        {/* Recent Notifications Component */}
         {recentNotification && (
           <div className="mt-5">
             <RecentNotifications 
