@@ -4,9 +4,10 @@ import { FormEvent, useState } from "react";
 import SignUp from "./SignUp";
 import ForgotPassword from "./ForgotPassword";
 import { loginUser } from "@/app/services/UserRegisterAndLoginServices";
-import Cookies from "js-cookie";
 import {useRouter} from "next/navigation";
 import ErrorPopUp from "@/app/components/ErrorPopuUp";
+import { Eye, EyeOff } from "lucide-react";
+import { setUserInfo } from "@/app/lib/cookies";
 
 type View = "intro" | "login" | "signup" | "forgot-password";
 
@@ -14,7 +15,10 @@ export default function Login() {
 	const [view, setView] = useState<View>("intro");
 	const [username, setUsername] = useState("");
 	const [password, setPassword] = useState("");
+	const [showPassword, setShowPassword] = useState(false);
 	const [message, setMessage] = useState<string | null>(null);
+	const [isLoading, setIsLoading] = useState(false);
+	const [showSuccess, setShowSuccess] = useState(false);
 	const [errorPopup, setErrorPopup] = useState({ open: false, message: "", type: "error" as "error" | "success" | "warning" | "info" });
 	const router= useRouter();
 
@@ -37,6 +41,7 @@ export default function Login() {
 			return;
 		}
 
+		setIsLoading(true);
 		setMessage("Attempting to log in…");
 		const loginData = { email: username, password };
 
@@ -44,30 +49,35 @@ export default function Login() {
 			const response = await loginUser(loginData);
 
 			if (response && response.token) {
+				// Show success message with fade-in animation
 				setMessage("Login Successful!");
+				setShowSuccess(true);
 				
-				// Store user info in localStorage
-				localStorage.setItem(
-					"userInfo",
-					JSON.stringify({
+				// Store user info in secure cookie
+				setUserInfo({
 					firstName: response.firstName,
 					lastName: response.lastName,
 					email: response.email,
 					role: response.role,
-					})
-				);
+				}, 3600); // 1 hour expiry
 				
-				// Store token in cookies
-				Cookies.set("authToken", response.token, { expires: 7 }); 
-				
-				redirectUser(response.role);
+				// Wait for animation to complete, then redirect
+				setTimeout(() => {
+					setShowSuccess(false);
+					// Wait for fade-out animation
+					setTimeout(() => {
+						redirectUser(response.role);
+					}, 300);
+				}, 1500);
 			} else {
 				setErrorPopup({ open: true, message: "Login failed. Please try again.", type: "error" });
 				setMessage(null);
+				setIsLoading(false);
 			}
 		} catch (error: any) {
 			setErrorPopup({ open: true, message: error.message || "An error occurred. Please try again.", type: "error" });
 			setMessage(null);
+			setIsLoading(false);
 		}
 	};
 
@@ -167,15 +177,36 @@ export default function Login() {
 						</p>
 
 						<form onSubmit={handleLogin} className="space-y-5">
+							{/* Success Message with Fade Animation */}
 							{message && (
-								<div className={`rounded-lg px-4 py-3 text-sm border ${
-									message.includes('Successful') 
-										? 'bg-green-900/50 text-green-400 border-green-800' 
-										: message.includes('error') || message.includes('failed')
-										? 'bg-red-900/50 text-red-400 border-red-800'
-										: 'bg-blue-900/50 text-blue-400 border-blue-800'
-								}`}>
-									{message}
+								<div 
+									className={`rounded-lg px-4 py-3 text-sm border transition-all duration-500 ease-in-out transform ${
+										showSuccess 
+											? 'opacity-100 translate-y-0 scale-100' 
+											: 'opacity-0 -translate-y-2 scale-95'
+									} ${
+										message.includes('Successful') 
+											? 'bg-gradient-to-r from-green-900/80 to-green-800/80 text-green-300 border-green-700 shadow-lg shadow-green-900/50' 
+											: message.includes('error') || message.includes('failed')
+											? 'bg-red-900/50 text-red-400 border-red-800'
+											: 'bg-blue-900/50 text-blue-400 border-blue-800'
+									}`}
+								>
+									<div className="flex items-center justify-center">
+										{message.includes('Successful') && (
+											<svg className="w-5 h-5 mr-2 animate-bounce" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+												<path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
+											</svg>
+										)}
+										<span className="font-medium">{message}</span>
+										{message.includes('Successful') && (
+											<span className="ml-2 inline-flex">
+												<span className="animate-pulse">.</span>
+												<span className="animate-pulse animation-delay-200">.</span>
+												<span className="animate-pulse animation-delay-400">.</span>
+											</span>
+										)}
+									</div>
 								</div>
 							)}
 							
@@ -197,21 +228,46 @@ export default function Login() {
 								<label htmlFor="password" className="block text-sm font-medium text-gray-300 mb-2">
 									Password
 								</label>
-								<input
-									id="password"
-									type="password"
-									value={password}
-									onChange={(e) => setPassword(e.target.value)}
-									placeholder="••••••••••••"
-									className="w-full rounded-xl border border-gray-600 bg-gray-700/50 backdrop-blur-sm px-4 py-3 text-gray-200 placeholder:text-gray-500 shadow-sm focus:border-orange-500 focus:ring-2 focus:ring-orange-500/30 focus:bg-gray-700 transition-all duration-200"
-								/>
+								<div className="relative">
+									<input
+										id="password"
+										type={showPassword ? "text" : "password"}
+										value={password}
+										onChange={(e) => setPassword(e.target.value)}
+										placeholder="••••••••••••"
+										className="w-full rounded-xl border border-gray-600 bg-gray-700/50 backdrop-blur-sm px-4 py-3 pr-12 text-gray-200 placeholder:text-gray-500 shadow-sm focus:border-orange-500 focus:ring-2 focus:ring-orange-500/30 focus:bg-gray-700 transition-all duration-200"
+									/>
+									<button
+										type="button"
+										onClick={() => setShowPassword(!showPassword)}
+										className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-400 hover:text-gray-300 focus:outline-none transition-colors"
+										aria-label={showPassword ? "Hide password" : "Show password"}
+									>
+										{showPassword ? <EyeOff size={20} /> : <Eye size={20} />}
+									</button>
+								</div>
 							</div>
 							
 							<button
 								type="submit"
-								className="w-full rounded-xl bg-gradient-to-r from-orange-500 to-orange-600 text-white font-semibold px-4 py-3 shadow-lg hover:from-orange-600 hover:to-orange-700 transform hover:scale-105 transition-all duration-200 focus:outline-none focus:ring-2 focus:ring-orange-400 focus:ring-offset-2 focus:ring-offset-gray-800"
+								disabled={isLoading}
+								className={`w-full rounded-xl font-semibold px-4 py-3 shadow-lg transform transition-all duration-200 focus:outline-none focus:ring-2 focus:ring-orange-400 focus:ring-offset-2 focus:ring-offset-gray-800 ${
+									isLoading 
+										? 'bg-gray-600 cursor-not-allowed' 
+										: 'bg-gradient-to-r from-orange-500 to-orange-600 text-white hover:from-orange-600 hover:to-orange-700 hover:scale-105'
+								}`}
 							>
-								Sign In
+								{isLoading ? (
+									<span className="flex items-center justify-center">
+										<svg className="animate-spin -ml-1 mr-3 h-5 w-5 text-white" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+											<circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
+											<path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+										</svg>
+										{message?.includes('Successful') ? 'Almost There...' : 'Signing In...'}
+									</span>
+								) : (
+									'Sign In'
+								)}
 							</button>
 
 							{/* Forgot Password Link */}

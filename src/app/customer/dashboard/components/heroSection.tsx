@@ -1,4 +1,5 @@
 import React from "react";
+import Link from "next/link";
 
 const CustomerDashboardHero = () => {
     return (
@@ -28,9 +29,11 @@ const CustomerDashboardHero = () => {
                         Get your car service done from trusted and skilled professionals.
                         Experience the best quality and performance every time.
                     </p>
-                    <button className="bg-orange-500 hover:bg-orange-600 text-white px-10 py-4 rounded-md font-semibold uppercase tracking-wide transition-all duration-300">
-                        Book Online
-                    </button>
+                    <Link href="/customer/Customer_Appoinments">
+                        <button className="bg-orange-500 hover:bg-orange-600 text-white px-10 py-4 rounded-md font-semibold uppercase tracking-wide transition-all duration-300">
+                            Book Online
+                        </button>
+                    </Link>
                 </div>
 
                 {/* Recommendations */}

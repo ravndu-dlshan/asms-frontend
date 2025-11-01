@@ -17,11 +17,11 @@ export async function middleware(req: NextRequest) {
     return NextResponse.next()
   }
 
-  // Only protect /admin and /customer routes
   const isAdminRoute = pathname === '/admin' || pathname.startsWith('/admin/')
   const isCustomerRoute = pathname === '/customer' || pathname.startsWith('/customer/')
+  const isEmployeeRoute = pathname === '/employee' || pathname.startsWith('/employee/')
 
-  if (!isAdminRoute && !isCustomerRoute) {
+  if (!isAdminRoute && !isCustomerRoute && !isEmployeeRoute) {
     return NextResponse.next()
   }
 
@@ -36,28 +36,16 @@ export async function middleware(req: NextRequest) {
     const decoded = await decodeJwtTokenMiddleware(token)
     const role = decoded.role 
 
-    const getRoleBasedRedirect = (userRole: string): string => {
-      switch (userRole) {
-        case 'ROLE_ADMIN':
-          return '/admin'
-        case 'ROLE_CUSTOMER':
-          return '/customer'
-        case 'ROLE_EMPLOYEE':
-          return '/employee'
-        default:
-          return '/'
-      }
-    }
-
   
-    if (isAdminRoute && role !== 'ROLE_ADMIN') {
-      const redirectTo = getRoleBasedRedirect(role)
-      return NextResponse.redirect(new URL(redirectTo, req.url))
+    if (isAdminRoute && role !== 'ADMIN') {
+      return NextResponse.redirect(new URL('/forbidden', req.url))
     }
 
-    if (isCustomerRoute && role !== 'ROLE_CUSTOMER') {
-      const redirectTo = getRoleBasedRedirect(role)
-      return NextResponse.redirect(new URL(redirectTo, req.url))
+    if (isCustomerRoute && role !== 'CUSTOMER') {
+      return NextResponse.redirect(new URL('/forbidden', req.url))
+    }
+    if (isEmployeeRoute && role !== 'EMPLOYEE') {
+      return NextResponse.redirect(new URL('/forbidden', req.url))
     }
     return NextResponse.next()
   } catch (err) {
