@@ -1,17 +1,11 @@
-"use client";
-import React, { useEffect, useState } from 'react';
+'use client';
 
-export default function Page() {
-  const [userInfo, setUserInfo] = useState('');
+import Dashboard from './dashboard/page';
 
-  useEffect(() => {
-    setUserInfo(localStorage.getItem("userInfo") || '');
-  }, []);
-
+export default function EmployeeDashboard() {
   return (
-    <div>
-      <h2>{userInfo}</h2>
-      <h1>Hi this is Employee Here!</h1>
+    <div className="space-y-4">
+      <Dashboard />
     </div>
   );
 }

@@ -11,6 +11,8 @@ import DialogContent from "@mui/material/DialogContent";
 import DialogContentText from "@mui/material/DialogContentText";
 import DialogTitle from "@mui/material/DialogTitle";
 import TextField from "@mui/material/TextField";
+import ErrorPopUp from "@/app/components/ErrorPopuUp";
+import { Eye, EyeOff } from "lucide-react";
 
 type Props = {
 	onBackToLogin?: () => void;
@@ -20,12 +22,16 @@ export default function SignUp({ onBackToLogin }: Props) {
 	const [firstName, setFirstName] = useState("");
 	const [lastName, setLastName] = useState("");
 	const [email, setEmail] = useState("");
+	const [address, setAddress] = useState("");
 	const [dob, setDob] = useState("");
 	const [gender, setGender] = useState("");
 	const [password, setPassword] = useState("");
 	const [confirmPassword, setConfirmPassword] = useState("");
 	const [role, setRole] = useState("");
 	const [message, setMessage] = useState<string | null>(null);
+	const [errorPopup, setErrorPopup] = useState({ open: false, message: "", type: "error" as "error" | "success" | "warning" | "info" });
+	const [showPassword, setShowPassword] = useState(false);
+	const [showConfirmPassword, setShowConfirmPassword] = useState(false);
 
 
 	// OTP dialog state
@@ -35,22 +41,79 @@ export default function SignUp({ onBackToLogin }: Props) {
 	const [activated, setActivated] = useState(false);
 	const router = useRouter(); //use the router to push the app to LogIn after registered
 
+	// Input sanitization helper
+	const sanitizeInput = (input: string): string => {
+		// Remove potential SQL injection characters and XSS attempts
+		return input
+			.replace(/[<>]/g, '') // Remove angle brackets (XSS)
+			.replace(/['";]/g, '') // Remove quotes and semicolons (SQL)
+			.replace(/--|\/\*|\*\//g, '') // Remove SQL comment syntax
+			.trim();
+	};
+
+	// Email validation
+	const isValidEmail = (email: string): boolean => {
+		const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+		return emailRegex.test(email);
+	};
+
+	// Password strength validation
+	const isStrongPassword = (password: string): boolean => {
+		// At least 8 characters, 1 uppercase, 1 lowercase, 1 number
+		const passwordRegex = /^(?=.*[a-z])(?=.*[A-Z])(?=.*\d).{8,}$/;
+		return passwordRegex.test(password);
+	};
+
 	const handleSubmit = async (e: FormEvent) => {
 		e.preventDefault();
-		if (!firstName || !lastName || !email || !dob || !gender || !role || !password || !confirmPassword) {
-			setMessage("Please fill in all fields.");
+		
+		// Sanitize inputs
+		const sanitizedFirstName = sanitizeInput(firstName);
+		const sanitizedLastName = sanitizeInput(lastName);
+		const sanitizedEmail = email.toLowerCase().trim();
+		const sanitizedAddress = role === "Customer" ? sanitizeInput(address) : "";
+		
+		// Email validation
+		if (!isValidEmail(sanitizedEmail)) {
+			setErrorPopup({ open: true, message: "Please enter a valid email address.", type: "warning" });
 			return;
 		}
+
+		// Password strength validation
+		if (!isStrongPassword(password)) {
+			setErrorPopup({ 
+				open: true, 
+				message: "Password must be at least 8 characters with uppercase, lowercase, and number.", 
+				type: "warning" 
+			});
+			return;
+		}
+		
+		// Different validation for Customer vs Admin/Employee
+		if (role === "Customer") {
+			if (!sanitizedFirstName || !sanitizedLastName || !sanitizedEmail || !sanitizedAddress || !dob || !gender || !role || !password || !confirmPassword) {
+				setErrorPopup({ open: true, message: "Please fill in all fields.", type: "warning" });
+				return;
+			}
+		} else {
+			// Admin/Employee don't need address, dob, gender
+			if (!sanitizedFirstName || !sanitizedLastName || !sanitizedEmail || !role || !password || !confirmPassword) {
+				setErrorPopup({ open: true, message: "Please fill in all fields.", type: "warning" });
+				return;
+			}
+		}
+		
 		if (password !== confirmPassword) {
-			setMessage("Passwords do not match.");
+			setErrorPopup({ open: true, message: "Passwords do not match.", type: "warning" });
 			return;
 		}
 		setMessage("Registering…");
 
 		const userData={
-			email,
-			firstName: firstName,
-			lastName: lastName,
+			email: sanitizedEmail,
+			firstName: sanitizedFirstName,
+			lastName: sanitizedLastName,
+			...(role === "Customer" && { address: sanitizedAddress }), // Only include for customers
 			password,
 			role: role
 		};
@@ -61,10 +124,12 @@ export default function SignUp({ onBackToLogin }: Props) {
 				setMessage("Registration successful! Please verify via OTP.");
 				setOtpOpen(true);
 			} else {
-				setMessage("Registration failed. Please try again.");
+				setErrorPopup({ open: true, message: "Registration failed. Please try again.", type: "error" });
+				setMessage(null);
 			}
-			}catch(error){
-				setMessage("An error occurred. Please try again.");
+			}catch(error: any){
+				setErrorPopup({ open: true, message: error.message || "An error occurred. Please try again.", type: "error" });
+				setMessage(null);
 			}
 	};
 
@@ -95,15 +160,14 @@ export default function SignUp({ onBackToLogin }: Props) {
 			} else {
 				setOtpError("Invalid OTP. Please try again.");
 			}
-		} catch (error) {
-			console.log(error);
-			setOtpError("Verification failed. Please try again.");
+		} catch (error: any) {
+			setOtpError(error.message || "Verification failed. Please try again.");
 		}
 	};
 
 	return (
 		<div className="w-full max-w-2xl relative z-10">
-			<div className="bg-gray-800/80 backdrop-blur-sm rounded-2xl shadow-2xl border border-gray-700/50 p-8">
+			<div className="bg-gray-800/80 backdrop-blur-sm rounded-2xl shadow-2xl border border-gray-700/50 p-8 transition-all duration-500 ease-in-out">
 				{/* Logo/Brand */}
 				<div className="flex items-center justify-center mb-6">
 					<div className="w-10 h-10 bg-gradient-to-r from-orange-500 to-orange-600 rounded-lg flex items-center justify-center mr-2">
@@ -127,13 +191,17 @@ export default function SignUp({ onBackToLogin }: Props) {
 						</button>
 					)}
 				</div>
-				<p className="text-sm text-gray-400 mb-6">
-					You can add vehicles after the registration.
+				<p className="text-sm text-gray-400 mb-6 transition-all duration-300">
+					{role === "Customer" 
+						? "You can add vehicles after the registration."
+						: role === "Admin"
+						? "Create an admin account to manage the system."
+						: "Please select your role to continue."}
 				</p>
 
-				<form onSubmit={handleSubmit} className="grid grid-cols-1 md:grid-cols-2 gap-4">
+				<form onSubmit={handleSubmit} className="grid grid-cols-1 md:grid-cols-2 gap-4 transition-all duration-300">
 					{message && (
-						<div className={`md:col-span-2 rounded-lg px-4 py-3 text-sm border ${
+						<div className={`md:col-span-2 rounded-lg px-4 py-3 text-sm border transition-all duration-300 ${
 							message.includes('successful') || message.includes('activated')
 								? 'bg-green-900/50 text-green-400 border-green-800' 
 								: message.includes('error') || message.includes('failed')
@@ -143,97 +211,168 @@ export default function SignUp({ onBackToLogin }: Props) {
 							{message}
 						</div>
 					)}
-					<div>
-						<label className="block text-sm font-medium text-gray-300 mb-2" htmlFor="firstName">First Name</label>
-						<input
-							id="firstName"
-							type="text"
-							value={firstName}
-							onChange={(e) => setFirstName(e.target.value)}
-							placeholder="John"
-							className="w-full rounded-xl border border-gray-600 bg-gray-700/50 backdrop-blur-sm px-4 py-3 text-gray-200 placeholder:text-gray-500 shadow-sm focus:border-orange-500 focus:ring-2 focus:ring-orange-500/30 focus:bg-gray-700 transition-all duration-200"
-						/>
-					</div>
-					<div>
-						<label className="block text-sm font-medium text-gray-300 mb-2" htmlFor="lastName">Last Name</label>
-						<input
-							id="lastName"
-							type="text"
-							value={lastName}
-							onChange={(e) => setLastName(e.target.value)}
-							placeholder="Doe"
-							className="w-full rounded-xl border border-gray-600 bg-gray-700/50 backdrop-blur-sm px-4 py-3 text-gray-200 placeholder:text-gray-500 shadow-sm focus:border-orange-500 focus:ring-2 focus:ring-orange-500/30 focus:bg-gray-700 transition-all duration-200"
-						/>
-					</div>
+					
+					{/* Role Selection - First Field */}
 					<div className="md:col-span-2">
-						<label className="block text-sm font-medium text-gray-300 mb-2" htmlFor="email">Email</label>
-						<input
-							id="email"
-							type="email"
-							value={email}
-							onChange={(e) => setEmail(e.target.value)}
-							placeholder="john.doe@example.com"
-							className="w-full rounded-xl border border-gray-600 bg-gray-700/50 backdrop-blur-sm px-4 py-3 text-gray-200 placeholder:text-gray-500 shadow-sm focus:border-orange-500 focus:ring-2 focus:ring-orange-500/30 focus:bg-gray-700 transition-all duration-200"
-						/>
-					</div>
-					<div>
-						<label className="block text-sm font-medium text-gray-300 mb-2" htmlFor="role">Role</label>
+						<label className="block text-sm font-medium text-gray-300 mb-2" htmlFor="role">
+							Select Role <span className="text-orange-500">*</span>
+						</label>
 						<select
 							id="role"
 							value={role}
 							onChange={(e) => setRole(e.target.value)}
 							className="w-full rounded-xl border border-gray-600 bg-gray-700/50 backdrop-blur-sm px-4 py-3 text-gray-200 shadow-sm focus:border-orange-500 focus:ring-2 focus:ring-orange-500/30 focus:bg-gray-700 transition-all duration-200"
 						>
-							<option value="">Select Role</option>
+							<option value="">Choose your role...</option>
 							<option value="Customer">Customer</option>
 							<option value="Admin">Admin</option>
 						</select>
 					</div>
-					<div>
-						<label className="block text-sm font-medium text-gray-300 mb-2" htmlFor="dob">Date of Birth</label>
-						<input
-							id="dob"
-							type="date"
-							value={dob}
-							onChange={(e) => setDob(e.target.value)}
-							className="w-full rounded-xl border border-gray-600 bg-gray-700/50 backdrop-blur-sm px-4 py-3 text-gray-200 shadow-sm focus:border-orange-500 focus:ring-2 focus:ring-orange-500/30 focus:bg-gray-700 transition-all duration-200"
-						/>
-					</div>
-					<div>
-						<label className="block text-sm font-medium text-gray-300 mb-2" htmlFor="gender">Gender</label>
-						<select
-							id="gender"
-							value={gender}
-							onChange={(e) => setGender(e.target.value)}
-							className="w-full rounded-xl border border-gray-600 bg-gray-700/50 backdrop-blur-sm px-4 py-3 text-gray-200 shadow-sm focus:border-orange-500 focus:ring-2 focus:ring-orange-500/30 focus:bg-gray-700 transition-all duration-200"
-						>
-							<option value="">Select Gender</option>
-							<option value="male">Male</option>
-							<option value="female">Female</option>
-						</select>
-					</div>
-					<div>
-						<label className="block text-sm font-medium text-gray-300 mb-2" htmlFor="password">Password</label>
-						<input
-							id="password"
-							type="password"
-							value={password}
-							onChange={(e) => setPassword(e.target.value)}
-							placeholder="••••••••••••"
-							className="w-full rounded-xl border border-gray-600 bg-gray-700/50 backdrop-blur-sm px-4 py-3 text-gray-200 placeholder:text-gray-500 shadow-sm focus:border-orange-500 focus:ring-2 focus:ring-orange-500/30 focus:bg-gray-700 transition-all duration-200"
-						/>
-					</div>
-					<div>
-						<label className="block text-sm font-medium text-gray-300 mb-2" htmlFor="confirmPassword">Confirm Password</label>
-						<input
-							id="confirmPassword"
-							type="password"
-							value={confirmPassword}
-							onChange={(e) => setConfirmPassword(e.target.value)}
-							placeholder="••••••••••••"
-							className="w-full rounded-xl border border-gray-600 bg-gray-700/50 backdrop-blur-sm px-4 py-3 text-gray-200 placeholder:text-gray-500 shadow-sm focus:border-orange-500 focus:ring-2 focus:ring-orange-500/30 focus:bg-gray-700 transition-all duration-200"
-						/>
-					</div>
+
+					{/* Show remaining fields only after role is selected */}
+					{role && (
+						<>
+							<div className="animate-fadeIn">
+								<label className="block text-sm font-medium text-gray-300 mb-2" htmlFor="firstName">First Name</label>
+								<input
+									id="firstName"
+									type="text"
+									value={firstName}
+									onChange={(e) => setFirstName(e.target.value)}
+									placeholder="Navoda"
+									required
+									minLength={2}
+									maxLength={50}
+									pattern="[A-Za-z\s]+"
+									title="Only letters and spaces allowed"
+									className="w-full rounded-xl border border-gray-600 bg-gray-700/50 backdrop-blur-sm px-4 py-3 text-gray-200 placeholder:text-gray-500 shadow-sm focus:border-orange-500 focus:ring-2 focus:ring-orange-500/30 focus:bg-gray-700 transition-all duration-200"
+								/>
+							</div>
+							<div className="animate-fadeIn" style={{ animationDelay: '50ms' }}>
+								<label className="block text-sm font-medium text-gray-300 mb-2" htmlFor="lastName">Last Name</label>
+								<input
+									id="lastName"
+									type="text"
+									value={lastName}
+									onChange={(e) => setLastName(e.target.value)}
+									placeholder="Chathurya"
+									required
+									minLength={2}
+									maxLength={50}
+									pattern="[A-Za-z\s]+"
+									title="Only letters and spaces allowed"
+									className="w-full rounded-xl border border-gray-600 bg-gray-700/50 backdrop-blur-sm px-4 py-3 text-gray-200 placeholder:text-gray-500 shadow-sm focus:border-orange-500 focus:ring-2 focus:ring-orange-500/30 focus:bg-gray-700 transition-all duration-200"
+								/>
+							</div>
+							<div className="md:col-span-2 animate-fadeIn" style={{ animationDelay: '100ms' }}>
+								<label className="block text-sm font-medium text-gray-300 mb-2" htmlFor="email">Email</label>
+								<input
+									id="email"
+									type="email"
+									value={email}
+									onChange={(e) => setEmail(e.target.value)}
+									placeholder="Carvocare@gmail.com"
+									required
+									maxLength={100}
+									className="w-full rounded-xl border border-gray-600 bg-gray-700/50 backdrop-blur-sm px-4 py-3 text-gray-200 placeholder:text-gray-500 shadow-sm focus:border-orange-500 focus:ring-2 focus:ring-orange-500/30 focus:bg-gray-700 transition-all duration-200"
+								/>
+							</div>
+
+							{/* Customer-specific fields */}
+							{role === "Customer" && (
+								<>
+									<div className="animate-fadeIn" style={{ animationDelay: '150ms' }}>
+										<label className="block text-sm font-medium text-gray-300 mb-2" htmlFor="dob">Date of Birth</label>
+										<input
+											id="dob"
+											type="date"
+											value={dob}
+											onChange={(e) => setDob(e.target.value)}
+											required={role === "Customer"}
+											max={new Date(new Date().setFullYear(new Date().getFullYear() - 18)).toISOString().split('T')[0]}
+											min={new Date(new Date().setFullYear(new Date().getFullYear() - 120)).toISOString().split('T')[0]}
+											className="w-full rounded-xl border border-gray-600 bg-gray-700/50 backdrop-blur-sm px-4 py-3 text-gray-200 shadow-sm focus:border-orange-500 focus:ring-2 focus:ring-orange-500/30 focus:bg-gray-700 transition-all duration-200"
+										/>
+									</div>
+									<div className="animate-fadeIn" style={{ animationDelay: '200ms' }}>
+										<label className="block text-sm font-medium text-gray-300 mb-2" htmlFor="gender">Gender</label>
+										<select
+											id="gender"
+											value={gender}
+											onChange={(e) => setGender(e.target.value)}
+											required={role === "Customer"}
+											className="w-full rounded-xl border border-gray-600 bg-gray-700/50 backdrop-blur-sm px-4 py-3 text-gray-200 shadow-sm focus:border-orange-500 focus:ring-2 focus:ring-orange-500/30 focus:bg-gray-700 transition-all duration-200"
+										>
+											<option value="">Select Gender</option>
+											<option value="male">Male</option>
+											<option value="female">Female</option>
+										</select>
+									</div>
+									<div className="md:col-span-2 animate-fadeIn" style={{ animationDelay: '250ms' }}>
+										<label className="block text-sm font-medium text-gray-300 mb-2" htmlFor="address">Address</label>
+										<input
+											id="address"
+											type="text"
+											value={address}
+											onChange={(e) => setAddress(e.target.value)}
+											placeholder="Enter your address"
+											required={role === "Customer"}
+											minLength={10}
+											maxLength={200}
+											className="w-full rounded-xl border border-gray-600 bg-gray-700/50 backdrop-blur-sm px-4 py-3 text-gray-200 placeholder:text-gray-500 shadow-sm focus:border-orange-500 focus:ring-2 focus:ring-orange-500/30 focus:bg-gray-700 transition-all duration-200"
+										/>
+									</div>
+								</>
+							)}
+
+							<div className="animate-fadeIn" style={{ animationDelay: role === "Customer" ? '300ms' : '150ms' }}>
+								<label className="block text-sm font-medium text-gray-300 mb-2" htmlFor="password">Password</label>
+								<div className="relative">
+									<input
+										id="password"
+										type={showPassword ? "text" : "password"}
+										value={password}
+										onChange={(e) => setPassword(e.target.value)}
+										placeholder="••••••••••••"
+										required
+										minLength={8}
+										maxLength={128}
+										className="w-full rounded-xl border border-gray-600 bg-gray-700/50 backdrop-blur-sm px-4 py-3 pr-12 text-gray-200 placeholder:text-gray-500 shadow-sm focus:border-orange-500 focus:ring-2 focus:ring-orange-500/30 focus:bg-gray-700 transition-all duration-200"
+									/>
+									<button
+										type="button"
+										onClick={() => setShowPassword(!showPassword)}
+										className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-400 hover:text-gray-300 focus:outline-none transition-colors"
+									>
+										{showPassword ? <EyeOff size={20} /> : <Eye size={20} />}
+									</button>
+								</div>
+							</div>
+							<div className="animate-fadeIn" style={{ animationDelay: role === "Customer" ? '350ms' : '200ms' }}>
+								<label className="block text-sm font-medium text-gray-300 mb-2" htmlFor="confirmPassword">Confirm Password</label>
+								<div className="relative">
+									<input
+										id="confirmPassword"
+										type={showConfirmPassword ? "text" : "password"}
+										value={confirmPassword}
+										onChange={(e) => setConfirmPassword(e.target.value)}
+										placeholder="••••••••••••"
+										required
+										minLength={8}
+										maxLength={128}
+										className="w-full rounded-xl border border-gray-600 bg-gray-700/50 backdrop-blur-sm px-4 py-3 pr-12 text-gray-200 placeholder:text-gray-500 shadow-sm focus:border-orange-500 focus:ring-2 focus:ring-orange-500/30 focus:bg-gray-700 transition-all duration-200"
+									/>
+									<button
+										type="button"
+										onClick={() => setShowConfirmPassword(!showConfirmPassword)}
+										className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-400 hover:text-gray-300 focus:outline-none transition-colors"
+									>
+										{showConfirmPassword ? <EyeOff size={20} /> : <Eye size={20} />}
+									</button>
+								</div>
+							</div>
+						</>
+					)}
 
 					<div className="md:col-span-2 mt-4">
 						<button
@@ -415,6 +554,14 @@ export default function SignUp({ onBackToLogin }: Props) {
 					</Button>
 				</DialogActions>
 			</Dialog>
+
+			{/* Error Popup */}
+			<ErrorPopUp
+				open={errorPopup.open}
+				onClose={() => setErrorPopup({ ...errorPopup, open: false })}
+				message={errorPopup.message}
+				type={errorPopup.type}
+			/>
 		</div>
 	);
 }

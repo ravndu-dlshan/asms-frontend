@@ -1,46 +1,85 @@
+import axiosInstance from '@/app/lib/axios';
+import { setCookie } from '@/app/lib/cookies';
 import axios from 'axios';
-const BASE_URL= process.env.NEXT_PUBLIC_BASE_URL;
 
-
-//Register New User
 export const registerUser= async (userData: {email: string, firstName: string, lastName: string, password : string, role:string})=>{
     try{
-        console.log('Registering user at URL:', `${BASE_URL}/api/auth/register`);
-        const response = await axios.post(`${BASE_URL}/api/auth/register`, userData);
+        const response = await axiosInstance.post(`/api/auth/register`, userData);
         return response.data;
     }catch(error){
-        window.alert("Registration failed. Please try again.");
-        console.log(error);
-        return null;
+        if (axios.isAxiosError(error)) {
+            const errorMessage = error.response?.data?.message || error.response?.data?.error || "Registration failed. Please try again.";
+            throw new Error(errorMessage);
+        }
+        throw new Error("An unexpected error occurred during registration.");
     }
 }
 
-//SendOtp For Verification
+
 export const sendOtp = async (otpCode:string)=>{
     try{
-        const response = await axios.post(`${BASE_URL}/api/auth/verify-otp`,  {otpCode} );
+        const response = await axiosInstance.post(`/api/auth/verify-otp`,  {otpCode} );
         return response.data;
     }catch(error){
-        window.alert("OTP verification failed. Please try again.");
-        return null;
+        if (axios.isAxiosError(error)) {
+            const errorMessage = error.response?.data?.message || error.response?.data?.error || "OTP verification failed. Please try again.";
+            throw new Error(errorMessage);
+        }
+        throw new Error("An unexpected error occurred during OTP verification.");
     }
 }
 
-//Login User
+
 export const loginUser = async (loginData: { email: string; password: string }) => {
   try {
-    const response = await axios.post(`${BASE_URL}/api/auth/login`, loginData);
+    console.log("Login Data:", loginData);
+    const response = await axiosInstance.post(`/api/auth/login`, loginData);
 
     const data = response.data;
-    if (data?.token && typeof window !== 'undefined') {
-      localStorage.setItem("authToken", data.token);
-      localStorage.setItem("userRole", data.role);
-      axios.defaults.headers.common["Authorization"] = `Bearer ${data.token}`;
+    if (data?.token) {
+      // Store token in secure cookie (1 hour expiry)
+      setCookie('authToken', data.token, 3600);
+      
+      // Store user role in cookie as well
+      if (data.role) {
+        setCookie('userRole', data.role, 3600);
+      }
     }
 
     return data;
   } catch (error) {
-    console.error("Login failed", error);
-    return null;
+    if (axios.isAxiosError(error)) {
+      const errorMessage = error.response?.data?.message || error.response?.data?.error || "Login failed. Please check your credentials.";
+      throw new Error(errorMessage);
+    }
+    throw new Error("An unexpected error occurred during login.");
+  }
+};
+
+
+export const forgotPassword = async (email: string) => {
+  try {
+    const response = await axiosInstance.post(`/api/auth/forgot-password`, { email });
+    return response.data;
+  } catch (error) {
+    if (axios.isAxiosError(error)) {
+      const errorMessage = error.response?.data?.message || error.response?.data?.error || "Failed to send reset email. Please try again.";
+      throw new Error(errorMessage);
+    }
+    throw new Error("An unexpected error occurred while requesting password reset.");
+  }
+};
+
+
+export const resetPassword = async (resetData: { email: string; otp: string; newPassword: string }) => {
+  try {
+    const response = await axiosInstance.post(`/api/auth/reset-password`, resetData);
+    return response.data;
+  } catch (error) {
+    if (axios.isAxiosError(error)) {
+      const errorMessage = error.response?.data?.message || error.response?.data?.error || "Failed to reset password. Please try again.";
+      throw new Error(errorMessage);
+    }
+    throw new Error("An unexpected error occurred while resetting password.");
   }
 };
