@@ -174,14 +174,3 @@ export default function TaskDetailPanel({ task }: TaskDetailPanelProps) {
     </div>
   );
 }
-
-const tasks = [
-  {
-    id: 'TSK-2024-001',
-    title: 'Oil Change & Filter Replacement',
-    vehicleModel: 'Toyota Camry 2020',
-    // ...other fields...
-    vehicleImageUrl: 'https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcTLQNUyPdKyLn02kH50qbo347MZ2dg-p7J8kBoeyHeYp8UuKiN1ZhIiR5RSLgWygYRkYLM&usqp=CAU'
-  },
-  // ...other tasks...
-];

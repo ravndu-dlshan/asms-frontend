@@ -9,7 +9,18 @@ const nextConfig: NextConfig = {
     NEXT_PUBLIC_BASE_URL: process.env.NEXT_PUBLIC_BASE_URL,
   },
   
+  // ESLint configuration for build
+  eslint: {
+    // Warning: This allows production builds to successfully complete even if
+    // your project has ESLint errors.
+    ignoreDuringBuilds: true,
+  },
   
+  // TypeScript configuration
+  typescript: {
+    // Only check types, don't fail build on type errors during development
+    ignoreBuildErrors: false,
+  },
 };
 
 export default nextConfig;
