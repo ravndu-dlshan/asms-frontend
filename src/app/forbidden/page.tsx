@@ -1,15 +1,18 @@
 'use client';
 
-import { useRouter, useSearchParams } from 'next/navigation';
+import { useRouter } from 'next/navigation';
 import { useEffect, useState } from 'react';
 import { ShieldAlert, Lock } from 'lucide-react';
 import { getUserInfo } from '@/app/lib/cookies';
 
 export default function ForbiddenPage() {
     const router = useRouter();
-    const searchParams = useSearchParams();
     const [countdown, setCountdown] = useState(10);
     const [redirectUrl, setRedirectUrl] = useState<string>('/');
+
+    const handleGoBack = () => {
+        router.push(redirectUrl);
+    };
 
     useEffect(() => {
      
@@ -42,11 +45,8 @@ export default function ForbiddenPage() {
         } else {
             handleGoBack();
         }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
     }, [countdown, redirectUrl]);
-
-    const handleGoBack = () => {
-        router.push(redirectUrl);
-    };
 
     return (
         <div className="min-h-screen bg-gradient-to-br from-gray-900 via-gray-800 to-black flex items-center justify-center p-4 overflow-hidden relative">

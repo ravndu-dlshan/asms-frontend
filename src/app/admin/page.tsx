@@ -1,6 +1,6 @@
 "use client";
 
-import React from 'react'
+import React from 'react';
 
 export default function Admin() {
   return (
@@ -8,5 +8,5 @@ export default function Admin() {
       {/* <h2>{localStorage.getItem("userInfo")}</h2> */}
       <h1>Hi this is Admin Here!</h1>
     </div>
-  )
+  );
 }
