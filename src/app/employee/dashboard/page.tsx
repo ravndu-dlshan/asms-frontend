@@ -58,7 +58,7 @@ export default function DashboardPage() {
     <main className="min-h-screen sm:p-4 md:p-3 lg:p-3">
       <div className="max-w-7xl mx-auto space-y-6 sm:space-y-8">
         {/* Greeting Section */}
-        <GreetingSection userName="John" />
+        <GreetingSection />
         {/* Jobs and Appointments */}
         <div className="w-full lg:col-span-2">
           <ActiveJobs />
