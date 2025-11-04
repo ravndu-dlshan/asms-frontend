@@ -11,7 +11,6 @@ interface TaskListProps {
   selectedTask: Task | null;
   filters: {
     status: string;
-    priority: string;
     date: string;
   };
 }
@@ -26,7 +25,6 @@ export default function TaskList({ tasks, onTaskSelect, selectedTask, filters }:
       task.customerName.toLowerCase().includes(searchTerm.toLowerCase());
 
     const matchesStatus = filters.status === 'all' || task.status === filters.status;
-    const matchesPriority = filters.priority === 'all' || task.priority === filters.priority;
 
     let matchesDate = true;
     if (filters.date !== 'all') {
@@ -51,7 +49,7 @@ export default function TaskList({ tasks, onTaskSelect, selectedTask, filters }:
       }
     }
 
-    return matchesSearch && matchesStatus && matchesPriority && matchesDate;
+  return matchesSearch && matchesStatus && matchesDate;
   });
 
   return (

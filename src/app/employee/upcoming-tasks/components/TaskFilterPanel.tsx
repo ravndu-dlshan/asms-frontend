@@ -5,7 +5,6 @@ import { Filter, X } from 'lucide-react';
 interface TaskFilterPanelProps {
   filters: {
     status: string;
-    priority: string;
     date: string;
   };
   onFilterChange: (key: string, value: string) => void;
@@ -13,7 +12,7 @@ interface TaskFilterPanelProps {
 }
 
 export default function TaskFilterPanel({ filters, onFilterChange, onClearFilters }: TaskFilterPanelProps) {
-  const hasActiveFilters = filters.status !== 'all' || filters.priority !== 'all' || filters.date !== 'all';
+  const hasActiveFilters = filters.status !== 'all' || filters.date !== 'all';
 
   return (
     <div className="bg-gray-900 rounded-xl p-6 border border-gray-800">
@@ -51,20 +50,7 @@ export default function TaskFilterPanel({ filters, onFilterChange, onClearFilter
           </select>
         </div>
 
-        <div>
-          <label className="block text-sm font-semibold text-gray-300 mb-2">Priority</label>
-          <select
-            value={filters.priority}
-            onChange={(e) => onFilterChange('priority', e.target.value)}
-            className="w-full bg-gray-800 border border-gray-700 rounded-lg px-4 py-2.5 text-white focus:outline-none focus:border-orange-500 focus:ring-2 focus:ring-orange-500/20 transition-all"
-          >
-            <option value="all">All Priority</option>
-            <option value="low">Low</option>
-            <option value="medium">Medium</option>
-            <option value="high">High</option>
-            <option value="urgent">Urgent</option>
-          </select>
-        </div>
+        {/* Priority filter removed per request */}
 
         <div>
           <label className="block text-sm font-semibold text-gray-300 mb-2">Date</label>

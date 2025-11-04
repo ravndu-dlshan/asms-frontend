@@ -11,7 +11,6 @@ export default function UpcomingTasksPage() {
   const [selectedTask, setSelectedTask] = useState<Task | null>(null);
   const [filters, setFilters] = useState({
     status: 'all',
-    priority: 'all',
     date: 'all'
   });
   const tasks = [
@@ -105,7 +104,6 @@ export default function UpcomingTasksPage() {
   const handleClearFilters = () => {
     setFilters({
       status: 'all',
-      priority: 'all',
       date: 'all'
     });
   };
