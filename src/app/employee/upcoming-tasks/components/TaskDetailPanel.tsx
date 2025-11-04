@@ -1,7 +1,7 @@
 // src/app/employee/upcoming-tasks/components/TaskDetailPanel.tsx
 'use client';
 
-import { Car, User, MapPin, Calendar, Clock, FileText, Wrench, AlertCircle, Phone, Mail } from 'lucide-react';
+import { Car, User, MapPin, Calendar, Clock, FileText, Wrench, AlertCircle, AlertTriangle, Phone, Mail } from 'lucide-react';
 import { formatDateTime, getPriorityColor, getStatusColor } from '../../utils';
 import type { Task } from '../types';
 
@@ -36,6 +36,10 @@ export default function TaskDetailPanel({ task }: TaskDetailPanelProps) {
         <span className={`inline-flex px-3 py-1 rounded-full text-xs font-semibold border ${getPriorityColor(task.priority ?? 'medium')}`}>
           {task.priority ?? 'medium'} Priority
         </span>
+
+        {task.assignedEmployeeName && (
+          <div className="mt-3 text-sm text-gray-300">Assigned to: <span className="text-white font-medium">{task.assignedEmployeeName}</span></div>
+        )}
        
       </div>
       {/* Content */}
@@ -112,6 +116,12 @@ export default function TaskDetailPanel({ task }: TaskDetailPanelProps) {
               </span>
               <span className="text-white font-medium">{task.estimatedDuration}</span>
             </div>
+            {typeof task.estimatedCost === 'number' && (
+              <div className="flex items-center justify-between">
+                <span className="text-gray-400 text-sm">Estimated Cost</span>
+                <span className="text-white font-medium">${task.estimatedCost.toFixed(2)}</span>
+              </div>
+            )}
           </div>
         </div>
 
@@ -125,6 +135,18 @@ export default function TaskDetailPanel({ task }: TaskDetailPanelProps) {
             <p className="text-gray-300 text-sm leading-relaxed">{task.description}</p>
           </div>
         </div>
+
+        {task.statusMessage && (
+          <div>
+            <h3 className="text-sm font-semibold text-gray-400 uppercase tracking-wider mb-3 flex items-center">
+              <AlertTriangle className="w-4 h-4 mr-2" />
+              Status Message
+            </h3>
+            <div className="bg-gray-800/50 rounded-lg p-4">
+              <p className="text-gray-300 text-sm leading-relaxed">{task.statusMessage}</p>
+            </div>
+          </div>
+        )}
 
         {/* Required Parts */}
         {task.requiredParts && task.requiredParts.length > 0 && (
@@ -174,14 +196,3 @@ export default function TaskDetailPanel({ task }: TaskDetailPanelProps) {
     </div>
   );
 }
-
-const tasks = [
-  {
-    id: 'TSK-2024-001',
-    title: 'Oil Change & Filter Replacement',
-    vehicleModel: 'Toyota Camry 2020',
-    // ...other fields...
-    vehicleImageUrl: 'https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcTLQNUyPdKyLn02kH50qbo347MZ2dg-p7J8kBoeyHeYp8UuKiN1ZhIiR5RSLgWygYRkYLM&usqp=CAU'
-  },
-  // ...other tasks...
-];

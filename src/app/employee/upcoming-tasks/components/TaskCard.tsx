@@ -31,6 +31,9 @@ export default function TaskCard({ task, onSelect, isSelected }: TaskCardProps) 
             </span>
           </div>
           <p className="text-gray-400 text-sm">{task.id}</p>
+          {task.assignedEmployeeName && (
+            <p className="text-gray-400 text-xs mt-1">Assigned: <span className="text-white">{task.assignedEmployeeName}</span></p>
+          )}
         </div>
         <span className={`px-3 py-1 rounded-full text-xs font-semibold border ${getStatusColor(task.status ?? 'scheduled')}`}>
           {task.status ?? 'scheduled'}
@@ -65,6 +68,9 @@ export default function TaskCard({ task, onSelect, isSelected }: TaskCardProps) 
           </div>
           <p className="text-sm text-white font-medium">{task.estimatedDuration}</p>
         </div>
+        {typeof task.estimatedCost === 'number' && (
+          <div className="col-span-2 text-right text-sm text-gray-300">Est. Cost: <span className="text-white font-semibold">${task.estimatedCost.toFixed(2)}</span></div>
+        )}
       </div>
 
       {/* Description */}

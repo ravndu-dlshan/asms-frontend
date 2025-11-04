@@ -1,11 +1,41 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { Calendar, Clock, AlertTriangle, CheckCircle2 } from 'lucide-react';
 import TaskList from './components/TaskList';
 import TaskFilterPanel from './components/TaskFilterPanel';
 import TaskDetailPanel from './components/TaskDetailPanel';
 import type { Task } from './types';
+import axiosInstance from '@/app/lib/axios';
+
+interface WorkOrderDTO {
+  id: number;
+  appointmentId?: number | null;
+  vehicleId?: number | null;
+  vehicleDetails?: string | null;
+  customerId?: number | null;
+  customerName?: string | null;
+  type?: string | null;
+  title?: string | null;
+  description?: string | null;
+  assignedEmployeeId?: number | null;
+  assignedEmployeeName?: string | null;
+  status?: string | null;
+  progressPercentage?: number | null;
+  statusMessage?: string | null;
+  estimatedCost?: number | null;
+  actualCost?: number | null;
+  estimatedCompletion?: string | null;
+  actualCompletion?: string | null;
+  createdAt?: string | null;
+  updatedAt?: string | null;
+}
+
+interface ApiResponse<T> {
+  success: boolean;
+  message?: string;
+  data?: T;
+}
 
 export default function UpcomingTasksPage() {
   const [selectedTask, setSelectedTask] = useState<Task | null>(null);
@@ -13,86 +43,78 @@ export default function UpcomingTasksPage() {
     status: 'all',
     date: 'all'
   });
-  const tasks = [
-    {
-      id: 'TSK-2024-001',
-      title: 'Oil Change & Filter Replacement',
-      vehicleModel: 'Toyota Camry 2020',
-      customerName: 'John Anderson',
-      location: 'Bay 3',
-      scheduledTime: '2024-10-17T09:00:00',
-      estimatedDuration: '1.5 hours',
-      priority: 'medium',
-      status: 'scheduled',
-      description: 'Regular oil change service with synthetic oil. Also replace oil filter and check fluid levels.',
-      customerPhone: '+1 (555) 123-4567',
-      customerEmail: 'john.anderson@email.com',
-      requiredParts: ['Synthetic Oil 5W-30', 'Oil Filter', 'Drain Plug Gasket'],
-      specialInstructions: 'Customer requested premium synthetic oil',
-    },
-    {
-      id: 'TSK-2024-002',
-      title: 'Brake System Inspection',
-      vehicleModel: 'Honda Civic 2019',
-      customerName: 'Sarah Mitchell',
-      location: 'Bay 1',
-      scheduledTime: '2024-10-17T11:00:00',
-      estimatedDuration: '2 hours',
-      priority: 'high',
-      status: 'scheduled',
-      description: 'Complete brake system inspection including pads, rotors, and fluid. Customer reported squeaking noise.',
-      customerPhone: '+1 (555) 234-5678',
-      customerEmail: 'sarah.m@email.com',
-      requiredParts: ['Brake Pads (Front)', 'Brake Fluid'],
-      specialInstructions: 'Check for unusual wear patterns on rotors'
-    },
-    {
-      id: 'TSK-2024-003',
-      title: 'Tire Rotation & Alignment',
-      vehicleModel: 'Ford F-150 2021',
-      customerName: 'Mike Roberts',
-      location: 'Bay 2',
-      scheduledTime: '2024-10-17T14:00:00',
-      estimatedDuration: '1 hour',
-      priority: 'low',
-      status: 'scheduled',
-      description: 'Rotate all four tires and perform wheel alignment check.',
-      customerPhone: '+1 (555) 345-6789',
-      customerEmail: 'mike.roberts@email.com',
-      requiredParts: []
-    },
-    {
-      id: 'TSK-2024-004',
-      title: 'Engine Diagnostic',
-      vehicleModel: 'BMW X5 2022',
-      customerName: 'Emma Wilson',
-      location: 'Bay 4',
-      scheduledTime: '2024-10-17T16:00:00',
-      estimatedDuration: '2.5 hours',
-      priority: 'urgent',
-      status: 'scheduled',
-      description: 'Check engine light is on. Run full diagnostic scan and identify issues.',
-      customerPhone: '+1 (555) 456-7890',
-      customerEmail: 'emma.w@email.com',
-      requiredParts: [],
-      specialInstructions: 'Priority service - customer needs car by end of day'
-    },
-    {
-      id: 'TSK-2024-005',
-      title: 'AC System Recharge',
-      vehicleModel: 'Mercedes C-Class 2020',
-      customerName: 'David Brown',
-      location: 'Bay 5',
-      scheduledTime: '2024-10-18T10:00:00',
-      estimatedDuration: '1 hour',
-      priority: 'medium',
-      status: 'scheduled',
-      description: 'AC not cooling properly. Check for leaks and recharge refrigerant.',
-      customerPhone: '+1 (555) 567-8901',
-      customerEmail: 'david.brown@email.com',
-      requiredParts: ['R-134a Refrigerant', 'AC Sealant']
+  const [tasks, setTasks] = useState<Task[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
+
+  useEffect(() => {
+  const controller = new AbortController();
+
+    const mapStatus = (s?: string | null) => {
+      if (!s) return 'scheduled';
+      const key = String(s).toUpperCase();
+      if (key === 'UNASSIGNED') return 'scheduled';
+      if (key === 'ASSIGNED') return 'in-progress';
+      if (key === 'COMPLETED' || key === 'DONE') return 'completed';
+      return String(s).toLowerCase();
+    };
+
+    async function fetchWorkOrders(signal?: AbortSignal) {
+      setLoading(true);
+      setError(null);
+      try {
+        // Use axiosInstance so the request gets the Authorization header from cookie (if present)
+        const res = await axiosInstance.get<ApiResponse<WorkOrderDTO[]>>('/api/work-orders/available', { signal });
+        const json = res.data;
+        if (json?.success && Array.isArray(json.data)) {
+          const mapped: Task[] = json.data.map((w) => ({
+            id: String(w.id),
+            title: w.title ?? w.type ?? 'Work Order',
+            vehicleModel: w.vehicleDetails ?? '',
+            customerName: w.customerName ?? '',
+            location: '',
+            scheduledTime: w.estimatedCompletion ?? w.createdAt ?? new Date().toISOString(),
+            estimatedDuration: '',
+            priority: '',
+            status: mapStatus(w.status ?? undefined),
+            description: w.description ?? w.statusMessage ?? '',
+            customerPhone: '',
+            customerEmail: '',
+            requiredParts: [],
+            specialInstructions: '',
+            estimatedCost: w.estimatedCost ?? null,
+            statusMessage: w.statusMessage ?? null,
+            assignedEmployeeName: w.assignedEmployeeName ?? null,
+            appointmentId: w.appointmentId ?? null,
+            vehicleId: w.vehicleId ?? null,
+            createdAt: w.createdAt ?? null,
+            updatedAt: w.updatedAt ?? null
+          }));
+          setTasks(mapped);
+        } else {
+          setError(json?.message ?? 'Unexpected response from server');
+        }
+      } catch (err) {
+        // err may be Error or other; stringify safely
+        // axios errors may contain response.status
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
+        const e: any = err;
+        if (e?.name === 'AbortError') {
+          // ignore
+        } else if (e?.response?.status === 403) {
+          setError('Forbidden: you may need to sign in (403)');
+        } else {
+          setError(String(e?.message ?? e));
+        }
+      } finally {
+        setLoading(false);
+      }
     }
-  ];
+
+    fetchWorkOrders(controller.signal);
+
+    return () => controller.abort();
+  }, []);
 
   const handleFilterChange = (key: string, value: string) => {
     setFilters(prev => ({
@@ -145,6 +167,16 @@ export default function UpcomingTasksPage() {
 
   return (
     <div className="space-y-6">
+      {loading && (
+        <div className="bg-gray-900 rounded-xl p-6 border border-gray-800 text-center">
+          <p className="text-gray-400">Loading tasks...</p>
+        </div>
+      )}
+      {error && (
+        <div className="bg-red-900 rounded-xl p-4 border border-red-800 text-center">
+          <p className="text-red-200">Error loading tasks: {error}</p>
+        </div>
+      )}
       <div>
         <h1 className="text-3xl font-bold text-white mb-2">Upcoming Tasks</h1>
         <p className="text-gray-400">Manage and track your scheduled service appointments</p>
