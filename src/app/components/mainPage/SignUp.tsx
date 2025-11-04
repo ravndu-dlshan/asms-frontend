@@ -11,6 +11,10 @@ import DialogContent from "@mui/material/DialogContent";
 import DialogContentText from "@mui/material/DialogContentText";
 import DialogTitle from "@mui/material/DialogTitle";
 import TextField from "@mui/material/TextField";
+import { LocalizationProvider } from '@mui/x-date-pickers/LocalizationProvider';
+import { AdapterDayjs } from '@mui/x-date-pickers/AdapterDayjs';
+import { DatePicker } from '@mui/x-date-pickers/DatePicker';
+import dayjs, { Dayjs } from 'dayjs';
 import ErrorPopUp from "@/app/components/ErrorPopuUp";
 import { Eye, EyeOff } from "lucide-react";
 
@@ -23,8 +27,8 @@ export default function SignUp({ onBackToLogin }: Props) {
 	const [lastName, setLastName] = useState("");
 	const [email, setEmail] = useState("");
 	const [address, setAddress] = useState("");
-	const [dob, setDob] = useState("");
-	const [gender, setGender] = useState("");
+	const [dob, setDob] = useState<Dayjs | null>(null);
+	const [phoneNumber, setPhoneNumber] = useState("");
 	const [password, setPassword] = useState("");
 	const [confirmPassword, setConfirmPassword] = useState("");
 	const [role, setRole] = useState("");
@@ -51,10 +55,18 @@ export default function SignUp({ onBackToLogin }: Props) {
 			.trim();
 	};
 
-	// Email validation
+	// Email validation - More strict
 	const isValidEmail = (email: string): boolean => {
-		const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
-		return emailRegex.test(email);
+		// RFC 5322 compliant email regex
+		const emailRegex = /^[a-zA-Z0-9.!#$%&'*+/=?^_`{|}~-]+@[a-zA-Z0-9](?:[a-zA-Z0-9-]{0,61}[a-zA-Z0-9])?(?:\.[a-zA-Z0-9](?:[a-zA-Z0-9-]{0,61}[a-zA-Z0-9])?)*$/;
+		return emailRegex.test(email) && email.length <= 254;
+	};
+
+	// Phone number validation - Must be +94XXXXXXXXX format
+	const isValidPhoneNumber = (phone: string): boolean => {
+		// Must start with +94 followed by exactly 9 digits (no spaces)
+		const phoneRegex = /^\+94\d{9}$/;
+		return phoneRegex.test(phone);
 	};
 
 	// Password strength validation
@@ -75,7 +87,21 @@ export default function SignUp({ onBackToLogin }: Props) {
 		
 		// Email validation
 		if (!isValidEmail(sanitizedEmail)) {
-			setErrorPopup({ open: true, message: "Please enter a valid email address.", type: "warning" });
+			setErrorPopup({ 
+				open: true, 
+				message: "Please enter a valid email address (e.g., user@example.com).", 
+				type: "warning" 
+			});
+			return;
+		}
+
+		// Phone number validation (only for customers)
+		if (role === "Customer" && !isValidPhoneNumber(phoneNumber)) {
+			setErrorPopup({ 
+				open: true, 
+				message: "Please enter a valid phone number in format +94XXXXXXXXX (e.g., +94771234567).", 
+				type: "warning" 
+			});
 			return;
 		}
 
@@ -91,12 +117,12 @@ export default function SignUp({ onBackToLogin }: Props) {
 		
 		// Different validation for Customer vs Admin/Employee
 		if (role === "Customer") {
-			if (!sanitizedFirstName || !sanitizedLastName || !sanitizedEmail || !sanitizedAddress || !dob || !gender || !role || !password || !confirmPassword) {
+			if (!sanitizedFirstName || !sanitizedLastName || !sanitizedEmail || !sanitizedAddress || !dob || !phoneNumber || !role || !password || !confirmPassword) {
 				setErrorPopup({ open: true, message: "Please fill in all fields.", type: "warning" });
 				return;
 			}
 		} else {
-			// Admin/Employee don't need address, dob, gender
+			// Admin/Employee don't need address, dob, phone
 			if (!sanitizedFirstName || !sanitizedLastName || !sanitizedEmail || !role || !password || !confirmPassword) {
 				setErrorPopup({ open: true, message: "Please fill in all fields.", type: "warning" });
 				return;
@@ -113,7 +139,11 @@ export default function SignUp({ onBackToLogin }: Props) {
 			email: sanitizedEmail,
 			firstName: sanitizedFirstName,
 			lastName: sanitizedLastName,
-			...(role === "Customer" && { address: sanitizedAddress }), // Only include for customers
+			...(role === "Customer" && { 
+				address: sanitizedAddress,
+				phoneNumber: phoneNumber,
+				dateOfBirth: dob?.format('YYYY-MM-DD')
+			}), // Only include for customers
 			password,
 			role: role
 		};
@@ -282,40 +312,231 @@ export default function SignUp({ onBackToLogin }: Props) {
 							{role === "Customer" && (
 								<>
 									<div className="animate-fadeIn" style={{ animationDelay: '150ms' }}>
-										<label className="block text-sm font-medium text-gray-300 mb-2" htmlFor="dob">Date of Birth</label>
-										<input
-											id="dob"
-											type="date"
-											value={dob}
-											onChange={(e) => setDob(e.target.value)}
-											required={role === "Customer"}
-											max={new Date(new Date().setFullYear(new Date().getFullYear() - 18)).toISOString().split('T')[0]}
-											min={new Date(new Date().setFullYear(new Date().getFullYear() - 120)).toISOString().split('T')[0]}
-											className="w-full rounded-xl border border-gray-600 bg-gray-700/50 backdrop-blur-sm px-4 py-3 text-gray-200 shadow-sm focus:border-orange-500 focus:ring-2 focus:ring-orange-500/30 focus:bg-gray-700 transition-all duration-200"
-										/>
+										<label className="block text-sm font-medium text-gray-300 mb-2" htmlFor="dob">
+											Date of Birth <span className="text-orange-500">*</span>
+										</label>
+										<LocalizationProvider dateAdapter={AdapterDayjs}>
+											<DatePicker
+												value={dob}
+												onChange={(newValue) => setDob(newValue)}
+												maxDate={dayjs().subtract(18, 'year')}
+												minDate={dayjs('1950-01-01')}
+												format="DD/MM/YYYY"
+												views={['year', 'month', 'day']}
+												openTo="year"
+												slotProps={{
+													textField: {
+														fullWidth: true,
+														placeholder: "Select your date of birth",
+														required: role === "Customer",
+														sx: {
+															'& .MuiOutlinedInput-root': {
+																borderRadius: '12px',
+																backgroundColor: 'rgba(55, 65, 81, 0.5)',
+																backdropFilter: 'blur(4px)',
+																transition: 'all 0.2s',
+																'& fieldset': {
+																	borderColor: 'rgb(75, 85, 99)',
+																	borderWidth: '1px',
+																},
+																'&:hover fieldset': {
+																	borderColor: '#f97316',
+																},
+																'&.Mui-focused fieldset': {
+																	borderColor: '#f97316',
+																	borderWidth: '2px',
+																},
+																'&.Mui-focused': {
+																	backgroundColor: 'rgb(55, 65, 81)',
+																	boxShadow: '0 0 0 2px rgba(249, 115, 22, 0.3)',
+																},
+																'& input': {
+																	color: '#e5e7eb',
+																	padding: '12px 16px',
+																	'&::placeholder': {
+																		color: 'rgb(107, 114, 128)',
+																		opacity: 1,
+																	},
+																},
+															},
+															'& .MuiInputLabel-root': {
+																display: 'none',
+															},
+															'& .MuiIconButton-root': {
+																color: '#9ca3af',
+																transition: 'color 0.2s',
+																'&:hover': {
+																	color: '#f97316',
+																	backgroundColor: 'transparent',
+																},
+															},
+															'& .MuiSvgIcon-root': {
+																color: 'inherit',
+															},
+														},
+													},
+													popper: {
+														sx: {
+															'& .MuiPaper-root': {
+																backgroundColor: 'rgba(31, 41, 55, 0.98)',
+																backdropFilter: 'blur(12px)',
+																border: '1px solid rgba(107, 114, 128, 0.3)',
+																borderRadius: '12px',
+																boxShadow: '0 25px 50px -12px rgba(0, 0, 0, 0.5)',
+																'& .MuiPickersDay-root': {
+																	color: '#e5e7eb !important',
+																	'&:hover': {
+																		backgroundColor: 'rgba(249, 115, 22, 0.1)',
+																		color: '#ffffff !important',
+																	},
+																	'&.Mui-selected': {
+																		backgroundColor: '#f97316 !important',
+																		color: '#ffffff !important',
+																		fontWeight: 600,
+																		'& > *': {
+																			color: '#ffffff !important',
+																		},
+																		'&:hover': {
+																			backgroundColor: '#ea580c !important',
+																			color: '#ffffff !important',
+																		},
+																		'&:focus': {
+																			backgroundColor: '#f97316 !important',
+																			color: '#ffffff !important',
+																		},
+																	},
+																	'&.Mui-disabled': {
+																		color: '#6b7280 !important',
+																	},
+																},
+																'& .MuiPickersCalendarHeader-root': {
+																	color: '#f3f4f6 !important',
+																	'& .MuiPickersCalendarHeader-label': {
+																		color: '#f3f4f6 !important',
+																		fontWeight: 500,
+																	},
+																	'& .MuiSvgIcon-root': {
+																		color: '#f97316 !important',
+																	},
+																	'& .MuiIconButton-root': {
+																		color: '#f97316 !important',
+																	},
+																},
+																'& .MuiDayCalendar-weekDayLabel': {
+																	color: '#9ca3af !important',
+																	fontWeight: 500,
+																},
+																'& .MuiPickersYear-yearButton': {
+																	color: '#e5e7eb !important',
+																	fontSize: '0.95rem',
+																	'&:hover': {
+																		backgroundColor: 'rgba(249, 115, 22, 0.1)',
+																		color: '#ffffff !important',
+																	},
+																	'&.Mui-selected': {
+																		backgroundColor: '#f97316 !important',
+																		color: '#ffffff !important',
+																		fontWeight: 600,
+																		'& > *': {
+																			color: '#ffffff !important',
+																		},
+																		'&:hover': {
+																			backgroundColor: '#ea580c !important',
+																			color: '#ffffff !important',
+																		},
+																		'&:focus': {
+																			backgroundColor: '#f97316 !important',
+																			color: '#ffffff !important',
+																		},
+																	},
+																	'&.Mui-disabled': {
+																		color: '#6b7280 !important',
+																	},
+																},
+																'& .MuiTypography-root': {
+																	color: '#e5e7eb !important',
+																},
+																'& .MuiButtonBase-root': {
+																	color: '#e5e7eb !important',
+																	'&.Mui-selected': {
+																		color: '#ffffff !important',
+																	},
+																},
+																'& .MuiPickersMonth-monthButton': {
+																	color: '#e5e7eb !important',
+																	'&:hover': {
+																		backgroundColor: 'rgba(249, 115, 22, 0.1)',
+																		color: '#ffffff !important',
+																	},
+																	'&.Mui-selected': {
+																		backgroundColor: '#f97316 !important',
+																		color: '#ffffff !important',
+																		fontWeight: 600,
+																		'& > *': {
+																			color: '#ffffff !important',
+																		},
+																		'&:hover': {
+																			backgroundColor: '#ea580c !important',
+																			color: '#ffffff !important',
+																		},
+																		'&:focus': {
+																			backgroundColor: '#f97316 !important',
+																			color: '#ffffff !important',
+																		},
+																	},
+																},
+																// Global overrides to force white text on selected items
+																'& button.Mui-selected': {
+																	color: '#ffffff !important',
+																},
+																'& .Mui-selected *': {
+																	color: '#ffffff !important',
+																},
+																'& button': {
+																	color: '#e5e7eb !important',
+																},
+																'& span': {
+																	color: 'inherit',
+																},
+															},
+														},
+													},
+												}}
+											/>
+										</LocalizationProvider>
 									</div>
 									<div className="animate-fadeIn" style={{ animationDelay: '200ms' }}>
-										<label className="block text-sm font-medium text-gray-300 mb-2" htmlFor="gender">Gender</label>
-										<select
-											id="gender"
-											value={gender}
-											onChange={(e) => setGender(e.target.value)}
+										<label className="block text-sm font-medium text-gray-300 mb-2" htmlFor="phoneNumber">
+											Phone Number <span className="text-orange-500">*</span>
+										</label>
+										<input
+											id="phoneNumber"
+											type="tel"
+											value={phoneNumber}
+											onChange={(e) => {
+												// Only allow +94 followed by digits
+												const value = e.target.value;
+												if (value === '' || value === '+' || value === '+9' || value === '+94' || /^\+94\d{0,9}$/.test(value)) {
+													setPhoneNumber(value);
+												}
+											}}
+											placeholder="+94771234567"
 											required={role === "Customer"}
-											className="w-full rounded-xl border border-gray-600 bg-gray-700/50 backdrop-blur-sm px-4 py-3 text-gray-200 shadow-sm focus:border-orange-500 focus:ring-2 focus:ring-orange-500/30 focus:bg-gray-700 transition-all duration-200"
-										>
-											<option value="">Select Gender</option>
-											<option value="male">Male</option>
-											<option value="female">Female</option>
-										</select>
+											maxLength={12}
+											className="w-full rounded-xl border border-gray-600 bg-gray-700/50 backdrop-blur-sm px-4 py-3 text-gray-200 placeholder:text-gray-500 shadow-sm focus:border-orange-500 focus:ring-2 focus:ring-orange-500/30 focus:bg-gray-700 transition-all duration-200"
+										/>
+										<p className="mt-1 text-xs text-gray-400">Format: +94XXXXXXXXX (no spaces)</p>
 									</div>
 									<div className="md:col-span-2 animate-fadeIn" style={{ animationDelay: '250ms' }}>
-										<label className="block text-sm font-medium text-gray-300 mb-2" htmlFor="address">Address</label>
+										<label className="block text-sm font-medium text-gray-300 mb-2" htmlFor="address">
+											Address <span className="text-orange-500">*</span>
+										</label>
 										<input
 											id="address"
 											type="text"
 											value={address}
 											onChange={(e) => setAddress(e.target.value)}
-											placeholder="Enter your address"
+											placeholder="Enter your full address"
 											required={role === "Customer"}
 											minLength={10}
 											maxLength={200}
