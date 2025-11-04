@@ -20,11 +20,11 @@ export const getUserFromStorage = () => {
       token,
     };
 
-    console.log("✅ User Loaded From Cookies:", user);
+    console.log("User Loaded From Cookies:", user);
     return user;
 
   } catch (error) {
-    console.error("❌ Error parsing user info from cookies:", error);
+    console.error("Error parsing user info from cookies:", error);
     return null;
   }
 };
