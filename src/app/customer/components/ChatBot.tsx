@@ -3,6 +3,8 @@
 import { useState, useRef, useEffect } from 'react';
 import { MessageCircle, X, Send, Bot, User, Minimize2, Loader2 } from 'lucide-react';
 import { sendChatMessage, startNewConversation, getSuggestedQueries } from '../services/ChatBotServices';
+import ReactMarkdown from 'react-markdown';
+import remarkGfm from 'remark-gfm';
 
 interface Message {
     id: string;
@@ -249,7 +251,36 @@ export default function ChatBot() {
                                                         : 'bg-gray-800 text-gray-200 rounded-tl-none'
                                                     : 'bg-gradient-to-r from-orange-500 to-orange-600 text-white rounded-tr-none'
                                             }`}>
-                                                <p className="text-sm leading-relaxed">{message.text}</p>
+                                                {message.sender === 'bot' && !message.error ? (
+                                                    <div className="text-sm leading-relaxed prose prose-invert prose-sm max-w-none
+                                                        prose-headings:text-gray-200 prose-headings:font-semibold prose-headings:mt-4 prose-headings:mb-2
+                                                        prose-p:text-gray-200 prose-p:my-2
+                                                        prose-a:text-orange-400 prose-a:no-underline hover:prose-a:text-orange-300
+                                                        prose-strong:text-white prose-strong:font-semibold
+                                                        prose-code:text-orange-300 prose-code:bg-gray-900/50 prose-code:px-1 prose-code:py-0.5 prose-code:rounded
+                                                        prose-pre:bg-gray-900 prose-pre:border prose-pre:border-gray-700
+                                                        prose-ul:list-disc prose-ul:ml-4 prose-ul:my-2
+                                                        prose-ol:list-decimal prose-ol:ml-4 prose-ol:my-2
+                                                        prose-li:text-gray-200 prose-li:my-1
+                                                        prose-blockquote:border-l-4 prose-blockquote:border-orange-500 prose-blockquote:pl-4 prose-blockquote:italic prose-blockquote:text-gray-300
+                                                        prose-table:border-collapse prose-table:w-full
+                                                        prose-th:border prose-th:border-gray-700 prose-th:bg-gray-800 prose-th:p-2 prose-th:text-left
+                                                        prose-td:border prose-td:border-gray-700 prose-td:p-2
+                                                    ">
+                                                        <ReactMarkdown 
+                                                            remarkPlugins={[remarkGfm]}
+                                                            components={{
+                                                                a: ({ node, ...props }) => (
+                                                                    <a {...props} target="_blank" rel="noopener noreferrer" />
+                                                                ),
+                                                            }}
+                                                        >
+                                                            {message.text}
+                                                        </ReactMarkdown>
+                                                    </div>
+                                                ) : (
+                                                    <p className="text-sm leading-relaxed">{message.text}</p>
+                                                )}
                                             </div>
                                             <span className="text-xs text-gray-500 mt-1 px-1">
                                                 {formatTime(message.timestamp)}
