@@ -6,13 +6,24 @@
     "dev": "next dev",
     "build": "next build",
     "start": "next start",
-    "lint": "eslint"
+    "lint": "eslint",
+    "docker:build": "docker build --build-arg NEXT_PUBLIC_BASE_URL=http://localhost:8080 -t asms-frontend .",
+    "docker:up": "docker-compose up -d",
+    "docker:down": "docker-compose down",
+    "docker:build-all": "docker-compose build",
+    "docker:logs": "docker-compose logs -f",
+    "docker:logs-frontend": "docker-compose logs -f frontend",
+    "docker:logs-backend": "docker-compose logs -f backend",
+    "docker:restart": "docker-compose restart",
+    "docker:clean": "docker-compose down -v --rmi all"
   },
   "dependencies": {
     "@emotion/react": "^11.14.0",
     "@emotion/styled": "^11.14.1",
     "@mui/material": "^7.3.2",
+    "@mui/x-date-pickers": "^8.16.0",
     "axios": "^1.12.2",
+    "dayjs": "^1.11.19",
     "jose": "^6.1.0",
     "js-cookie": "^3.0.5",
     "jsonwebtoken": "^9.0.2",
@@ -23,7 +34,9 @@
     "react-360-view": "^0.1.3",
     "react-countup": "^6.5.3",
     "react-dom": "19.1.0",
-    "recharts": "^3.3.0"
+    "react-markdown": "^10.1.0",
+    "recharts": "^3.3.0",
+    "remark-gfm": "^4.0.1"
   },
   "devDependencies": {
     "@eslint/eslintrc": "^3",
