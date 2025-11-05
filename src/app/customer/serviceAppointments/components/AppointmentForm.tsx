@@ -19,6 +19,7 @@ export default function AppointmentForm({ cars, service }: AppointmentFormProps)
   const [errors, setErrors] = useState<Record<string, string>>({});
   const [submitting, setSubmitting] = useState(false);
   const [submitError, setSubmitError] = useState<string | null>(null);
+  const [showSuccessPopup, setShowSuccessPopup] = useState(false);
 
   const selectedCar = cars.find(c => c.id === selectedCarId);
 
@@ -79,6 +80,7 @@ export default function AppointmentForm({ cars, service }: AppointmentFormProps)
       await CreateWorkOrder(workOrder)
 
       resetForm();
+      setShowSuccessPopup(true);
     } catch (err: any) {
       setSubmitError(err?.response?.data?.message || err?.message || 'Failed to create appointment');
     } finally {
@@ -96,6 +98,25 @@ export default function AppointmentForm({ cars, service }: AppointmentFormProps)
 
   return (
     <div className="bg-gradient-to-br from-gray-900 to-gray-800 rounded-xl p-6 border border-gray-700">
+      {/* Success Popup */}
+      {showSuccessPopup && (
+        <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50">
+          <div className="bg-gray-900 border border-gray-700 rounded-xl p-6 max-w-sm w-full mx-4 shadow-2xl">
+            <div className="text-center mb-6">
+              <p className="text-white text-lg font-semibold">Appointment booked successfully!</p>
+            </div>
+            <div className="flex justify-end">
+              <button
+                onClick={() => setShowSuccessPopup(false)}
+                className="px-6 py-2 bg-gradient-to-r from-orange-500 to-orange-600 text-white rounded-lg hover:from-orange-600 hover:to-orange-700 transition-all font-medium"
+              >
+                OK
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
       <div className="flex items-center space-x-3 mb-6">
         <div className="w-10 h-10 bg-gradient-to-r from-orange-500 to-orange-600 rounded-lg flex items-center justify-center">
           <Calendar className="w-5 h-5 text-white" />
@@ -245,4 +266,3 @@ export default function AppointmentForm({ cars, service }: AppointmentFormProps)
     </div>
   );
 }
-
