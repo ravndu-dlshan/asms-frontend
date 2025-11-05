@@ -61,6 +61,16 @@ export default function Login() {
 					role: response.role,
 				}, 3600); // 1 hour expiry
 				
+				// Also store in localStorage for compatibility
+				localStorage.setItem('userInfo', JSON.stringify({
+					firstName: response.firstName,
+					lastName: response.lastName,
+					email: response.email,
+					role: response.role,
+				}));
+				localStorage.setItem('authToken', response.token);
+				localStorage.setItem('userRole', response.role);
+				
 				// Wait for animation to complete, then redirect
 				setTimeout(() => {
 					setShowSuccess(false);
