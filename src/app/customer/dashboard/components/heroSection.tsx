@@ -101,7 +101,7 @@ const CustomerDashboardHero = () => {
                 </div>
 
                 {/* Right side content */}
-                <div className="flex-1 max-w-sm space-y-6 mt-10 lg:mt-0 min-h-[420px] flex flex-col">
+                <div className="flex-1 w-full md:max-w-sm space-y-6 mt-10 lg:mt-0 min-h-[420px] flex flex-col">
 
                     {!showProgress && (
                         <h2 className="text-2xl font-bold text-orange-500 uppercase transition-all duration-700">
