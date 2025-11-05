@@ -2,7 +2,7 @@
 'use client';
 
 import { Calendar, Clock, Car, MapPin, Play, CheckCircle } from 'lucide-react';
-import { formatDateTime, getPriorityColor, getStatusColor } from '../../utils';
+import { formatDateTime, getPriorityColor, getStatusColor, formatCurrencyLKR } from '../../utils';
 import type { Task } from '../types';
 
 interface TaskCardProps {
@@ -30,7 +30,7 @@ export default function TaskCard({ task, onSelect, isSelected }: TaskCardProps) 
               {task.priority ?? 'medium'}
             </span>
           </div>
-          <p className="text-gray-400 text-sm">{task.id}</p>
+          {/* task id hidden per UX request */}
           {task.assignedEmployeeName && (
             <p className="text-gray-400 text-xs mt-1">Assigned: <span className="text-white">{task.assignedEmployeeName}</span></p>
           )}
@@ -69,7 +69,7 @@ export default function TaskCard({ task, onSelect, isSelected }: TaskCardProps) 
           <p className="text-sm text-white font-medium">{task.estimatedDuration}</p>
         </div>
         {typeof task.estimatedCost === 'number' && (
-          <div className="col-span-2 text-right text-sm text-gray-300">Est. Cost: <span className="text-white font-semibold">${task.estimatedCost.toFixed(2)}</span></div>
+          <div className="col-span-2 text-right text-sm text-gray-300">Est. Cost: <span className="text-white font-semibold">{formatCurrencyLKR(task.estimatedCost)}</span></div>
         )}
       </div>
 

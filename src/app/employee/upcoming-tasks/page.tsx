@@ -1,7 +1,7 @@
 'use client';
 
 import { useState, useEffect } from 'react';
-import { Calendar, Clock, AlertTriangle, CheckCircle2 } from 'lucide-react';
+import { Calendar, Clock, AlertTriangle } from 'lucide-react';
 import TaskList from './components/TaskList';
 import TaskFilterPanel from './components/TaskFilterPanel';
 import TaskDetailPanel from './components/TaskDetailPanel';
@@ -130,10 +130,12 @@ export default function UpcomingTasksPage() {
     });
   };
 
+  // derive quick stats from the fetched tasks so UI stays up-to-date
+  const todayStr = new Date().toDateString();
   const stats = [
     {
       label: 'Today\'s Tasks',
-      value: tasks.filter(t => new Date(t.scheduledTime).toDateString() === new Date().toDateString()).length,
+      value: tasks.filter(t => new Date(t.scheduledTime).toDateString() === todayStr).length,
       icon: Calendar,
       color: 'from-blue-500 to-blue-600',
       bgColor: 'bg-blue-500/10',
@@ -148,22 +150,46 @@ export default function UpcomingTasksPage() {
       iconColor: 'text-orange-400'
     },
     {
-      label: 'Urgent',
-      value: tasks.filter(t => t.priority === 'urgent').length,
+      label: 'Scheduled',
+      value: tasks.filter(t => t.status === 'scheduled').length,
       icon: AlertTriangle,
-      color: 'from-red-500 to-red-600',
-      bgColor: 'bg-red-500/10',
-      iconColor: 'text-red-400'
-    },
-    {
-      label: 'Completed Today',
-      value: 3,
-      icon: CheckCircle2,
-      color: 'from-green-500 to-green-600',
-      bgColor: 'bg-green-500/10',
-      iconColor: 'text-green-400'
+      color: 'from-purple-500 to-purple-600',
+      bgColor: 'bg-purple-500/10',
+      iconColor: 'text-purple-400'
     }
   ];
+
+  // Start task handler: optimistic update and call backend to mark as started
+  const handleStartTask = async (task: Task) => {
+    const prevTasks = tasks;
+    const prevSelected = selectedTask;
+
+    // optimistic update
+    setTasks(prev => prev.map(t => t.id === task.id ? { ...t, status: 'in-progress' } : t));
+    if (selectedTask?.id === task.id) setSelectedTask({ ...task, status: 'in-progress' });
+
+    try {
+      const res = await axiosInstance.post(`/api/work-orders/${task.id}/start`, { startedAt: new Date().toISOString() });
+      const json = res.data as ApiResponse<WorkOrderDTO>;
+      if (json?.success && json.data) {
+        const w = json.data;
+        const updated: Task = {
+          ...task,
+          status: (w.status ? (String(w.status).toLowerCase() === 'assigned' ? 'in-progress' : String(w.status).toLowerCase()) : 'in-progress'),
+          assignedEmployeeName: w.assignedEmployeeName ?? task.assignedEmployeeName,
+          estimatedCost: w.estimatedCost ?? task.estimatedCost,
+          scheduledTime: w.estimatedCompletion ?? task.scheduledTime
+        };
+        setTasks(prev => prev.map(t => t.id === task.id ? updated : t));
+        setSelectedTask(updated);
+      }
+    } catch {
+      // revert optimistic update on error
+      setTasks(prevTasks);
+      setSelectedTask(prevSelected);
+      setError('Failed to start task — please try again');
+    }
+  };
 
   return (
     <div className="space-y-6">
@@ -223,7 +249,7 @@ export default function UpcomingTasksPage() {
         </div>
 
         <div className="lg:col-span-5">
-          <TaskDetailPanel task={selectedTask} />
+          <TaskDetailPanel task={selectedTask} onStart={handleStartTask} />
         </div>
       </div>
     </div>
