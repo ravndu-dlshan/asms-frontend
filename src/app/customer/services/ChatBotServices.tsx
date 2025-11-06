@@ -19,14 +19,14 @@ chatbotAxios.interceptors.request.use(
     (config) => {
         console.log(`🤖 Making ${config.method?.toUpperCase()} request to chatbot: ${config.url}`);
         
-        // Get auth token from cookie
-        const token = getCookie('authToken');
+        // Get access token from cookie (updated from authToken to accessToken)
+        const token = getCookie('accessToken');
         if (token) {
             console.log('🔑 Adding Bearer token to chatbot request');
             console.log('🔑 Token (first 20 chars):', token.substring(0, 20) + '...');
             config.headers.Authorization = `Bearer ${token}`;
         } else {
-            console.warn('⚠️ No auth token found for chatbot request');
+            console.warn('⚠️ No access token found for chatbot request');
         }
         
         console.log('📋 Chatbot request headers:', config.headers);

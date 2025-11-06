@@ -79,10 +79,17 @@ export default function Sidebar() {
   }, [pathname]);
 
   const handleLogout = () => {
+    // Clear all auth cookies
     document.cookie =
-      "authToken=; path=/; expires=Thu, 01 Jan 1970 00:00:00 UTC;";
+      "accessToken=; path=/; expires=Thu, 01 Jan 1970 00:00:00 UTC;";
+    document.cookie =
+      "refreshToken=; path=/; expires=Thu, 01 Jan 1970 00:00:00 UTC;";
+    document.cookie =
+      "authToken=; path=/; expires=Thu, 01 Jan 1970 00:00:00 UTC;"; // Keep for backward compatibility
     document.cookie =
       "userInfo=; path=/; expires=Thu, 01 Jan 1970 00:00:00 UTC;";
+    document.cookie =
+      "userRole=; path=/; expires=Thu, 01 Jan 1970 00:00:00 UTC;";
     router.push("/");
   };
 
