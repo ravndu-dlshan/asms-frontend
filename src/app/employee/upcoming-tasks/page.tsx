@@ -39,6 +39,7 @@ interface ApiResponse<T> {
 
 export default function UpcomingTasksPage() {
   const [selectedTask, setSelectedTask] = useState<Task | null>(null);
+  const [startedTasks, setStartedTasks] = useState<Set<string>>(new Set());
   const [filters, setFilters] = useState({
     status: 'all',
     date: 'all'
@@ -47,17 +48,18 @@ export default function UpcomingTasksPage() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
 
-  useEffect(() => {
-  const controller = new AbortController();
+  // central status mapper so all places use the same logic
+  const mapStatus = (s?: string | null) => {
+    if (!s) return 'scheduled';
+    const key = String(s).toUpperCase();
+    if (key === 'UNASSIGNED') return 'scheduled';
+    if (key === 'ASSIGNED') return 'in-progress';
+    if (key === 'COMPLETED' || key === 'DONE') return 'completed';
+    return String(s).toLowerCase();
+  };
 
-    const mapStatus = (s?: string | null) => {
-      if (!s) return 'scheduled';
-      const key = String(s).toUpperCase();
-      if (key === 'UNASSIGNED') return 'scheduled';
-      if (key === 'ASSIGNED') return 'in-progress';
-      if (key === 'COMPLETED' || key === 'DONE') return 'completed';
-      return String(s).toLowerCase();
-    };
+  useEffect(() => {
+    const controller = new AbortController();
 
     async function fetchWorkOrders(signal?: AbortSignal) {
       setLoading(true);
@@ -132,6 +134,7 @@ export default function UpcomingTasksPage() {
 
   // derive quick stats from the fetched tasks so UI stays up-to-date
   const todayStr = new Date().toDateString();
+  const effectiveStatus = (t: Task) => startedTasks.has(t.id) ? 'in-progress' : t.status;
   const stats = [
     {
       label: 'Today\'s Tasks',
@@ -143,7 +146,7 @@ export default function UpcomingTasksPage() {
     },
     {
       label: 'In Progress',
-      value: tasks.filter(t => t.status === 'in-progress').length,
+      value: tasks.filter(t => effectiveStatus(t) === 'in-progress').length,
       icon: Clock,
       color: 'from-orange-500 to-orange-600',
       bgColor: 'bg-orange-500/10',
@@ -151,7 +154,7 @@ export default function UpcomingTasksPage() {
     },
     {
       label: 'Scheduled',
-      value: tasks.filter(t => t.status === 'scheduled').length,
+      value: tasks.filter(t => effectiveStatus(t) === 'scheduled').length,
       icon: AlertTriangle,
       color: 'from-purple-500 to-purple-600',
       bgColor: 'bg-purple-500/10',
@@ -175,13 +178,53 @@ export default function UpcomingTasksPage() {
         const w = json.data;
         const updated: Task = {
           ...task,
-          status: (w.status ? (String(w.status).toLowerCase() === 'assigned' ? 'in-progress' : String(w.status).toLowerCase()) : 'in-progress'),
+            status: mapStatus(w.status ?? undefined) || 'in-progress',
           assignedEmployeeName: w.assignedEmployeeName ?? task.assignedEmployeeName,
           estimatedCost: w.estimatedCost ?? task.estimatedCost,
           scheduledTime: w.estimatedCompletion ?? task.scheduledTime
         };
         setTasks(prev => prev.map(t => t.id === task.id ? updated : t));
         setSelectedTask(updated);
+        // remember this task as started locally so UI won't revert
+        setStartedTasks(prev => new Set(prev).add(String(task.id)));
+        // fetch full list to reconcile statuses for all tasks
+        try {
+          const listRes = await axiosInstance.get<ApiResponse<WorkOrderDTO[]>>('/api/work-orders/available');
+          const listJson = listRes.data;
+          if (listJson?.success && Array.isArray(listJson.data)) {
+            const mapped: Task[] = listJson.data.map((w) => ({
+              id: String(w.id),
+              title: w.title ?? w.type ?? 'Work Order',
+              vehicleModel: w.vehicleDetails ?? '',
+              customerName: w.customerName ?? '',
+              location: '',
+              scheduledTime: w.estimatedCompletion ?? w.createdAt ?? new Date().toISOString(),
+              estimatedDuration: '',
+              priority: '',
+              status: (w.status ? (String(w.status).toLowerCase() === 'assigned' ? 'in-progress' : String(w.status).toLowerCase()) : 'scheduled'),
+              description: w.description ?? w.statusMessage ?? '',
+              customerPhone: '',
+              customerEmail: '',
+              requiredParts: [],
+              specialInstructions: '',
+              estimatedCost: w.estimatedCost ?? null,
+              statusMessage: w.statusMessage ?? null,
+              assignedEmployeeName: w.assignedEmployeeName ?? null,
+              appointmentId: w.appointmentId ?? null,
+              vehicleId: w.vehicleId ?? null,
+              createdAt: w.createdAt ?? null,
+              updatedAt: w.updatedAt ?? null
+            }));
+            setTasks(mapped);
+            // ensure local started override remains
+            setStartedTasks(prev => new Set(prev).add(String(task.id)));
+            // update selectedTask from the fresh list
+            const fresh = mapped.find(m => m.id === String(task.id));
+            if (fresh) setSelectedTask(fresh);
+          }
+        } catch {
+          // ignore list refresh errors for now
+        }
       }
     } catch {
       // revert optimistic update on error
@@ -190,6 +233,71 @@ export default function UpcomingTasksPage() {
       setError('Failed to start task — please try again');
     }
   };
+
+  // Complete task handler: call backend to mark as completed and refresh list
+  const handleCompleteTask = async (task: Task) => {
+    const prevTasks = tasks;
+    const prevSelected = selectedTask;
+    try {
+      // optimistic UI: set to completed locally
+      setTasks(prev => prev.map(t => t.id === task.id ? { ...t, status: 'completed' } : t));
+      if (selectedTask?.id === task.id) setSelectedTask({ ...task, status: 'completed' });
+
+      await axiosInstance.post(`/api/work-orders/${task.id}/complete`, { completedAt: new Date().toISOString() });
+
+      // refresh full list
+      try {
+        const listRes = await axiosInstance.get<ApiResponse<WorkOrderDTO[]>>('/api/work-orders/available');
+        const listJson = listRes.data;
+        if (listJson?.success && Array.isArray(listJson.data)) {
+          const mapped: Task[] = listJson.data.map((w) => ({
+            id: String(w.id),
+            title: w.title ?? w.type ?? 'Work Order',
+            vehicleModel: w.vehicleDetails ?? '',
+            customerName: w.customerName ?? '',
+            location: '',
+            scheduledTime: w.estimatedCompletion ?? w.createdAt ?? new Date().toISOString(),
+            estimatedDuration: '',
+            priority: '',
+              status: mapStatus(w.status ?? undefined) || 'scheduled',
+            description: w.description ?? w.statusMessage ?? '',
+            customerPhone: '',
+            customerEmail: '',
+            requiredParts: [],
+            specialInstructions: '',
+            estimatedCost: w.estimatedCost ?? null,
+            statusMessage: w.statusMessage ?? null,
+            assignedEmployeeName: w.assignedEmployeeName ?? null,
+            appointmentId: w.appointmentId ?? null,
+            vehicleId: w.vehicleId ?? null,
+            createdAt: w.createdAt ?? null,
+            updatedAt: w.updatedAt ?? null
+          }));
+          setTasks(mapped);
+          const fresh = mapped.find(m => m.id === String(task.id));
+          if (fresh) setSelectedTask(fresh);
+        }
+      } catch {
+        // ignore
+      }
+
+      // remove from local started override (it's completed now)
+      setStartedTasks(prev => {
+        const s = new Set(prev);
+        s.delete(task.id);
+        return s;
+      });
+    } catch {
+      // revert on error
+      setTasks(prevTasks);
+      setSelectedTask(prevSelected);
+      setError('Failed to complete task — please try again');
+    }
+  };
+
+  // apply local startedTasks override so UI shows in-progress until backend confirms later
+  const visibleTasks = tasks.map(t => startedTasks.has(t.id) ? { ...t, status: 'in-progress' } : t);
+  const visibleSelectedTask = selectedTask && startedTasks.has(selectedTask.id) ? { ...selectedTask, status: 'in-progress' } : selectedTask;
 
   return (
     <div className="space-y-6">
@@ -241,15 +349,15 @@ export default function UpcomingTasksPage() {
 
         <div className="lg:col-span-4">
           <TaskList
-            tasks={tasks}
+            tasks={visibleTasks}
             onTaskSelect={(task: Task) => setSelectedTask(task)}
-            selectedTask={selectedTask}
+            selectedTask={visibleSelectedTask}
             filters={filters}
           />
         </div>
 
         <div className="lg:col-span-5">
-          <TaskDetailPanel task={selectedTask} onStart={handleStartTask} />
+          <TaskDetailPanel task={visibleSelectedTask} onStart={handleStartTask} onComplete={handleCompleteTask} />
         </div>
       </div>
     </div>

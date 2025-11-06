@@ -2,19 +2,22 @@
 'use client';
 
 import { useState } from 'react';
-import { useRouter } from 'next/navigation';
-import { Car, User, MapPin, Calendar, Clock, FileText, Wrench, AlertCircle, AlertTriangle, Phone, Mail } from 'lucide-react';
+// router navigation removed: using window.open for external tab navigation to keep modal open
+import { Car, User, MapPin, Calendar, Clock, FileText, Wrench, AlertCircle, AlertTriangle, Phone, Mail, Check } from 'lucide-react';
 import { formatDateTime, getPriorityColor, getStatusColor, formatCurrencyLKR } from '../../utils';
 import type { Task } from '../types';
 
 interface TaskDetailPanelProps {
   task: Task | null;
   onStart?: (task: Task) => Promise<void>;
+  onComplete?: (task: Task) => Promise<void>;
 }
 
-export default function TaskDetailPanel({ task, onStart }: TaskDetailPanelProps) {
+export default function TaskDetailPanel({ task, onStart, onComplete }: TaskDetailPanelProps) {
   const [showStartModal, setShowStartModal] = useState(false);
-  const router = useRouter();
+  // no router needed here
+  const [startConfirmed, setStartConfirmed] = useState(false);
+  const [completedConfirmed, setCompletedConfirmed] = useState(false);
 
   // helper to map status to step index
   const statusToStep = (status?: string | null) => {
@@ -212,56 +215,138 @@ export default function TaskDetailPanel({ task, onStart }: TaskDetailPanelProps)
       {/* Start modal */}
       {showStartModal && (
         <div className="fixed inset-0 z-50 flex items-center justify-center">
-          <div className="absolute inset-0 bg-black/60" onClick={() => setShowStartModal(false)} />
+          <div className="absolute inset-0 bg-black/60" />
           <div className="relative w-full max-w-2xl mx-4 bg-gray-900 rounded-xl border border-gray-800 p-6 z-10">
-            <h3 className="text-xl font-bold text-white mb-4">Start Task</h3>
+            <div className="flex items-start justify-between">
+              <h3 className="text-xl font-bold text-white mb-4">Start Task</h3>
+              <button
+                aria-label="Close"
+                onClick={() => { setShowStartModal(false); setStartConfirmed(false); setCompletedConfirmed(false); }}
+                className="ml-4 text-gray-300 hover:text-white rounded-md p-1"
+              >
+                <svg xmlns="http://www.w3.org/2000/svg" className="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+                </svg>
+              </button>
+            </div>
             <p className="text-gray-400 mb-4">This shows the task progress stages. You can either start the task here or open the time tracker to track your working time.</p>
 
             {/* Stepper */}
             <div className="flex items-center justify-between mb-6">
               {['Scheduled', 'In Progress', 'Completed'].map((label, idx) => {
-                const active = idx <= statusToStep(task.status);
+                const serverStep = statusToStep(task?.status); // 0,1,2 based on actual task.status
+                // if user just confirmed start locally, show up to In Progress (1) even if serverStep is 0
+                let displayedStep = serverStep;
+                if (startConfirmed && serverStep < 1) displayedStep = 1;
+                if (completedConfirmed) displayedStep = 2;
+
+                // mark completed only when server indicates completed or we just confirmed completion locally
+                const completed = serverStep === 2 || completedConfirmed;
+                const active = idx <= displayedStep;
                 return (
                   <div key={label} className="flex-1 flex items-center">
                     <div className={`w-10 h-10 rounded-full flex items-center justify-center border ${active ? 'bg-orange-500 text-white border-orange-500' : 'bg-gray-800 text-gray-400 border-gray-700'}`}>
-                      {idx + 1}
+                      {completed && idx <= 2 ? <Check className="w-5 h-5" /> : <span className="font-semibold">{idx + 1}</span>}
                     </div>
                     <div className="ml-3 text-sm text-gray-300">{label}</div>
-                    {idx < 2 && <div className={`flex-1 h-0.5 mx-3 ${idx < statusToStep(task.status) ? 'bg-orange-500' : 'bg-gray-700'}`} />}
+                    {idx < 2 && <div className={`flex-1 h-0.5 mx-3 ${idx < displayedStep ? 'bg-orange-500' : 'bg-gray-700'}`} />}
                   </div>
                 );
               })}
             </div>
 
+            {/* success message shown after confirming start */}
+            {startConfirmed && (
+              <div className="mb-4 p-3 rounded-lg bg-green-900/60 border border-green-800 text-green-200">
+                Task started — good luck with your work!
+              </div>
+            )}
+
+            {/* compute current server step to determine which actions to show */}
             <div className="flex items-center justify-end space-x-3">
               <button
                 onClick={() => {
-                  // navigate to work-log with prefilled details and autoStart
+                  // open work-log in a new tab with prefilled details and autoStart so this modal remains open
                   const params = new URLSearchParams();
                   params.set('title', task.title ?? '');
                   params.set('description', task.description ?? '');
                   params.set('autoStart', 'true');
-                  router.push(`/employee/work-log?${params.toString()}`);
-                  setShowStartModal(false);
+                  const url = `/employee/work-log?${params.toString()}`;
+                  // open new tab/window; keep modal open in current tab
+                  if (typeof window !== 'undefined') {
+                    window.open(url, '_blank', 'noopener,noreferrer');
+                  }
                 }}
                 className="px-4 py-2 bg-gray-800 text-gray-300 rounded-lg hover:bg-gray-700 transition-colors font-medium border border-gray-700"
               >
-                Track my working time
+                Track my working time (opens in new tab)
               </button>
+              {/* Decide which action buttons to show based on server status and local confirmations */}
+              {(() => {
+                const serverStep = statusToStep(task?.status);
+                const isInProgress = serverStep === 1 || startConfirmed;
+                const isCompleted = serverStep === 2 || completedConfirmed;
 
-              <button
-                onClick={async () => {
-                  if (onStart) {
-                    await onStart(task);
-                  }
-                  setShowStartModal(false);
-                }}
-                className="px-4 py-2 bg-gradient-to-r from-green-500 to-green-600 text-white rounded-lg hover:from-green-600 hover:to-green-700 transition-all font-medium"
-              >
-                Confirm Start
-              </button>
+                // If not yet in-progress, show Confirm Start
+                if (!isInProgress && !isCompleted) {
+                  return (
+                    <button
+                      onClick={async () => {
+                        // set local confirmation state and call parent handler; do NOT auto-close
+                        setStartConfirmed(true);
+                        try {
+                          if (onStart) await onStart(task);
+                        } catch (err) {
+                          // revert local confirmed state on error
+                          console.error('Error starting task', err);
+                          setStartConfirmed(false);
+                        }
+                      }}
+                      disabled={startConfirmed}
+                      className={`px-4 py-2 ${startConfirmed ? 'bg-green-700 text-white/80' : 'bg-gradient-to-r from-green-500 to-green-600 text-white hover:from-green-600 hover:to-green-700'} rounded-lg transition-all font-medium`}
+                    >
+                      {startConfirmed ? 'Started ✓' : 'Confirm Start'}
+                    </button>
+                  );
+                }
 
-              <button onClick={() => setShowStartModal(false)} className="px-3 py-2 text-sm text-gray-300">Cancel</button>
+                // If in-progress (server or local), show Mark Completed button
+                if (isInProgress && !isCompleted) {
+                  return (
+                    <button
+                      onClick={async () => {
+                        // set local confirmation and call parent handler; keep modal open until user closes
+                        setCompletedConfirmed(true);
+                        try {
+                          if (onComplete) await onComplete(task);
+                        } catch (err) {
+                          console.error('Error completing task', err);
+                          setCompletedConfirmed(false);
+                        }
+                      }}
+                      disabled={completedConfirmed}
+                      className={`px-4 py-2 ${completedConfirmed ? 'bg-indigo-700 text-white/80' : 'bg-gradient-to-r from-indigo-500 to-indigo-600 text-white hover:from-indigo-600 hover:to-indigo-700'} rounded-lg transition-all font-medium`}
+                    >
+                      {completedConfirmed ? 'Completed ✓' : 'Mark Completed'}
+                    </button>
+                  );
+                }
+
+                // otherwise show simple Close
+                return (
+                  <button
+                    onClick={() => {
+                      // allow explicit close and clear local flags
+                      setShowStartModal(false);
+                      setStartConfirmed(false);
+                      setCompletedConfirmed(false);
+                    }}
+                    className="px-3 py-2 text-sm text-gray-300"
+                  >
+                    Close
+                  </button>
+                );
+              })()}
             </div>
           </div>
         </div>
