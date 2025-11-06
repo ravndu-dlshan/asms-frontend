@@ -67,13 +67,15 @@ const mapWorkOrder = (job: WorkOrderResponse): WorkOrder => ({
 
 export const getAssignedWorkOrders = async (
   status?: string,
-  filterToday = false
+  filterToday = false,
+  type?: string
 ): Promise<WorkOrder[]> => {
   try {
     const url = '/api/work-orders/my-assigned';
     const params: Record<string, string | boolean> = {};
     if (status) params.status = status;
     if (filterToday) params.filterToday = true;
+    if (type) params.type = type;
 
     const response = await axiosInstance.get<{ success: boolean; data: WorkOrderResponse[] }>(
       url,
@@ -81,8 +83,6 @@ export const getAssignedWorkOrders = async (
     );
 
     if (!response.data.success) return [];
-
-    // Map backend fields once here
     return response.data.data.map(mapWorkOrder);
   } catch (error) {
     console.error('Error fetching assigned work orders:', error);
