@@ -34,7 +34,7 @@ const axiosInstance = axios.create({
 axiosInstance.interceptors.request.use(
   (config) => {
     // Get access token from cookie
-    const token = getCookie('accessToken');
+    const token = getCookie('authToken');
     if (token) {
       config.headers.Authorization = `Bearer ${token}`;
     }
@@ -75,7 +75,7 @@ axiosInstance.interceptors.response.use(
       if (!refreshToken) {
         // No refresh token available, redirect to login
         console.log('No refresh token available, redirecting to login');
-        deleteCookie('accessToken');
+        deleteCookie('authToken');
         deleteCookie('refreshToken');
         deleteCookie('userRole');
         deleteCookie('userInfo');
@@ -103,8 +103,8 @@ axiosInstance.interceptors.response.use(
         const { token: newAccessToken } = response.data;
 
         if (newAccessToken) {
-          // Store new access token (1 day expiry)
-          setCookie('accessToken', newAccessToken, 86400);
+          // Store new access token (1 hour expiry to match login)
+          setCookie('authToken', newAccessToken, 3600);
 
           // Update authorization header
           axiosInstance.defaults.headers.common.Authorization = `Bearer ${newAccessToken}`;
@@ -121,7 +121,7 @@ axiosInstance.interceptors.response.use(
         console.error('Token refresh failed:', refreshError);
         processQueue(refreshError as Error, null);
         
-        deleteCookie('accessToken');
+        deleteCookie('authToken');
         deleteCookie('refreshToken');
         deleteCookie('userRole');
         deleteCookie('userInfo');
