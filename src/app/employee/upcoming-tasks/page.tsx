@@ -1,6 +1,7 @@
 'use client';
 
 import { useState, useEffect, useCallback } from 'react';
+import Image from 'next/image';
 import { Calendar, Clock, AlertTriangle } from 'lucide-react';
 import TaskList from './components/TaskList';
 import TaskFilterPanel from './components/TaskFilterPanel';
@@ -365,6 +366,15 @@ export default function UpcomingTasksPage() {
             onFilterChange={handleFilterChange}
             onClearFilters={handleClearFilters}
           />
+          <div className="mt-6 flex items-center justify-center">
+            <Image
+              src="/employee.png"
+              alt="Employee"
+              width={760}
+              height={260}
+              className="object-cover rounded-lg border border-gray-000"
+            />
+          </div>
         </div>
 
         <div className="lg:col-span-4">
