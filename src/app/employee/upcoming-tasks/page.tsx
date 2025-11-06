@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useCallback } from 'react';
 import { Calendar, Clock, AlertTriangle } from 'lucide-react';
 import TaskList from './components/TaskList';
 import TaskFilterPanel from './components/TaskFilterPanel';
@@ -40,6 +40,10 @@ interface ApiResponse<T> {
 export default function UpcomingTasksPage() {
   const [selectedTask, setSelectedTask] = useState<Task | null>(null);
   const [startedTasks, setStartedTasks] = useState<Set<string>>(new Set());
+  // locally completed during this session — kept until page refresh / logout
+  const [locallyCompleted, setLocallyCompleted] = useState<Set<string>>(new Set());
+  // lifted search term so counts update when user searches
+  const [searchTerm, setSearchTerm] = useState('');
   const [filters, setFilters] = useState({
     status: 'all',
     date: 'all'
@@ -53,70 +57,90 @@ export default function UpcomingTasksPage() {
     if (!s) return 'scheduled';
     const key = String(s).toUpperCase();
     if (key === 'UNASSIGNED') return 'scheduled';
-    if (key === 'ASSIGNED') return 'in-progress';
+    // treat ASSIGNED as scheduled per new requirement
+    if (key === 'ASSIGNED' || key === 'SCHEDULED') return 'scheduled';
+    if (key === 'IN_PROGRESS') return 'in-progress';
     if (key === 'COMPLETED' || key === 'DONE') return 'completed';
     return String(s).toLowerCase();
   };
+  // Fetch work orders for the logged-in employee (exposed so child can call onRefresh)
+  const fetchWorkOrders = useCallback(async (signal?: AbortSignal): Promise<Task[] | undefined> => {
+    setLoading(true);
+    setError(null);
+    try {
+      // fetch assigned and available in parallel then merge uniquely by id
+      const [assignedRes, availableRes] = await Promise.all([
+        axiosInstance.get<ApiResponse<WorkOrderDTO[]>>('/api/work-orders/my-assigned', { signal }),
+        axiosInstance.get<ApiResponse<WorkOrderDTO[]>>('/api/work-orders/available', { signal })
+      ]);
+
+      const assigned = assignedRes?.data?.success && Array.isArray(assignedRes.data.data) ? assignedRes.data.data : [];
+      const available = availableRes?.data?.success && Array.isArray(availableRes.data.data) ? availableRes.data.data : [];
+
+      const byId = new Map<number, WorkOrderDTO>();
+      // prefer assigned data when duplicate
+      [...available, ...assigned].forEach((w) => {
+        if (!w || typeof w.id === 'undefined' || w.id === null) return;
+        const existing = byId.get(w.id);
+        if (!existing) byId.set(w.id, w);
+        else {
+          // merge fields, prefer assigned (if current item from assigned override)
+          byId.set(w.id, { ...existing, ...w });
+        }
+      });
+
+      const merged = Array.from(byId.values());
+
+      const mapped: Task[] = merged.map((w) => ({
+        id: String(w.id),
+        title: w.title ?? w.type ?? 'Work Order',
+        vehicleModel: w.vehicleDetails ?? '',
+        customerName: w.customerName ?? '',
+        location: '',
+        scheduledTime: w.estimatedCompletion ?? w.createdAt ?? new Date().toISOString(),
+        estimatedDuration: '',
+        priority: '',
+        status: mapStatus(w.status ?? undefined) || 'scheduled',
+        description: w.description ?? w.statusMessage ?? '',
+        customerPhone: '',
+        customerEmail: '',
+        requiredParts: [],
+        specialInstructions: '',
+        estimatedCost: w.estimatedCost ?? null,
+        statusMessage: w.statusMessage ?? null,
+        assignedEmployeeName: w.assignedEmployeeName ?? null,
+        assignedEmployeeId: w.assignedEmployeeId ?? null,
+        appointmentId: w.appointmentId ?? null,
+        vehicleId: w.vehicleId ?? null,
+        createdAt: w.createdAt ?? null,
+        updatedAt: w.updatedAt ?? null
+      }));
+
+      // ensure any locally completed tasks remain visible until refresh/logout
+      const withLocalCompleted = mapped.map((t) => (locallyCompleted.has(t.id) ? { ...t, status: 'completed' } : t));
+
+  setTasks(withLocalCompleted);
+  return withLocalCompleted;
+    } catch (err) {
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      const e: any = err;
+      if (e?.name === 'AbortError') {
+        // ignore
+      } else if (e?.response?.status === 403) {
+        setError('Forbidden: you may need to sign in (403)');
+      } else {
+        setError(String(e?.message ?? e));
+      }
+    } finally {
+      setLoading(false);
+    }
+  }, [locallyCompleted]);
 
   useEffect(() => {
     const controller = new AbortController();
-
-    async function fetchWorkOrders(signal?: AbortSignal) {
-      setLoading(true);
-      setError(null);
-      try {
-        // Use axiosInstance so the request gets the Authorization header from cookie (if present)
-        const res = await axiosInstance.get<ApiResponse<WorkOrderDTO[]>>('/api/work-orders/available', { signal });
-        const json = res.data;
-        if (json?.success && Array.isArray(json.data)) {
-          const mapped: Task[] = json.data.map((w) => ({
-            id: String(w.id),
-            title: w.title ?? w.type ?? 'Work Order',
-            vehicleModel: w.vehicleDetails ?? '',
-            customerName: w.customerName ?? '',
-            location: '',
-            scheduledTime: w.estimatedCompletion ?? w.createdAt ?? new Date().toISOString(),
-            estimatedDuration: '',
-            priority: '',
-            status: mapStatus(w.status ?? undefined),
-            description: w.description ?? w.statusMessage ?? '',
-            customerPhone: '',
-            customerEmail: '',
-            requiredParts: [],
-            specialInstructions: '',
-            estimatedCost: w.estimatedCost ?? null,
-            statusMessage: w.statusMessage ?? null,
-            assignedEmployeeName: w.assignedEmployeeName ?? null,
-            appointmentId: w.appointmentId ?? null,
-            vehicleId: w.vehicleId ?? null,
-            createdAt: w.createdAt ?? null,
-            updatedAt: w.updatedAt ?? null
-          }));
-          setTasks(mapped);
-        } else {
-          setError(json?.message ?? 'Unexpected response from server');
-        }
-      } catch (err) {
-        // err may be Error or other; stringify safely
-        // axios errors may contain response.status
-        // eslint-disable-next-line @typescript-eslint/no-explicit-any
-        const e: any = err;
-        if (e?.name === 'AbortError') {
-          // ignore
-        } else if (e?.response?.status === 403) {
-          setError('Forbidden: you may need to sign in (403)');
-        } else {
-          setError(String(e?.message ?? e));
-        }
-      } finally {
-        setLoading(false);
-      }
-    }
-
-    fetchWorkOrders(controller.signal);
-
+    fetchWorkOrders(controller.signal).finally(() => setLoading(false));
     return () => controller.abort();
-  }, []);
+  }, [fetchWorkOrders]);
 
   const handleFilterChange = (key: string, value: string) => {
     setFilters(prev => ({
@@ -132,13 +156,55 @@ export default function UpcomingTasksPage() {
     });
   };
 
-  // derive quick stats from the fetched tasks so UI stays up-to-date
-  const todayStr = new Date().toDateString();
-  const effectiveStatus = (t: Task) => startedTasks.has(t.id) ? 'in-progress' : t.status;
+  // prepare visible tasks by applying local overrides (started / locally completed)
+  const applyLocalOverrides = (list: Task[]) => list.map(t => {
+    if (locallyCompleted.has(t.id)) return { ...t, status: 'completed' };
+    if (startedTasks.has(t.id)) return { ...t, status: 'in-progress' };
+    return t;
+  });
+
+  // filtering (status, date, search) — TaskList previously kept its own search; lift it here so counts update with search
+  const matchesStatusFilter = (task: Task, statusFilter: string) => {
+    if (statusFilter === 'all') return true;
+    return task.status === statusFilter;
+  };
+
+  const matchesDateFilter = (task: Task, dateFilter: string) => {
+    if (dateFilter === 'all') return true;
+    const taskDate = new Date(task.scheduledTime);
+    const today = new Date();
+    today.setHours(0, 0, 0, 0);
+    switch (dateFilter) {
+      case 'today':
+        return taskDate.toDateString() === today.toDateString();
+      case 'tomorrow':
+        const tomorrow = new Date(today);
+        tomorrow.setDate(tomorrow.getDate() + 1);
+        return taskDate.toDateString() === tomorrow.toDateString();
+      case 'this-week':
+        const weekEnd = new Date(today);
+        weekEnd.setDate(weekEnd.getDate() + 7);
+        return taskDate >= today && taskDate <= weekEnd;
+      default:
+        return true;
+    }
+  };
+
+  const matchesSearch = (task: Task, term: string) => {
+    if (!term) return true;
+    const q = term.toLowerCase();
+    return task.title.toLowerCase().includes(q) || task.vehicleModel.toLowerCase().includes(q) || task.customerName.toLowerCase().includes(q);
+  };
+
+  const effectiveTasks = applyLocalOverrides(tasks);
+  const filteredTasks = effectiveTasks.filter(t => matchesStatusFilter(t, filters.status) && matchesDateFilter(t, filters.date) && matchesSearch(t, searchTerm));
+
+  // derive quick stats from the currently displayed (filtered) tasks so UI stays up-to-date
   const stats = [
     {
       label: 'Today\'s Tasks',
-      value: tasks.filter(t => new Date(t.scheduledTime).toDateString() === todayStr).length,
+      // total of all tasks currently displayed (regardless of status)
+      value: filteredTasks.length,
       icon: Calendar,
       color: 'from-blue-500 to-blue-600',
       bgColor: 'bg-blue-500/10',
@@ -146,7 +212,8 @@ export default function UpcomingTasksPage() {
     },
     {
       label: 'In Progress',
-      value: tasks.filter(t => effectiveStatus(t) === 'in-progress').length,
+      // count tasks with status "IN_PROGRESS" (mapped to 'in-progress')
+      value: filteredTasks.filter(t => t.status === 'in-progress').length,
       icon: Clock,
       color: 'from-orange-500 to-orange-600',
       bgColor: 'bg-orange-500/10',
@@ -154,7 +221,8 @@ export default function UpcomingTasksPage() {
     },
     {
       label: 'Scheduled',
-      value: tasks.filter(t => effectiveStatus(t) === 'scheduled').length,
+      // count tasks with server statuses ASSIGNED or SCHEDULED (mapped to 'scheduled')
+      value: filteredTasks.filter(t => t.status === 'scheduled').length,
       icon: AlertTriangle,
       color: 'from-purple-500 to-purple-600',
       bgColor: 'bg-purple-500/10',
@@ -162,79 +230,48 @@ export default function UpcomingTasksPage() {
     }
   ];
 
-  // Start task handler: optimistic update and call backend to mark as started
+  // Start task handler: optimistic update and call backend to update status via PUT
   const handleStartTask = async (task: Task) => {
     const prevTasks = tasks;
     const prevSelected = selectedTask;
 
-    // optimistic update
+    // optimistic update (frontend representation)
     setTasks(prev => prev.map(t => t.id === task.id ? { ...t, status: 'in-progress' } : t));
     if (selectedTask?.id === task.id) setSelectedTask({ ...task, status: 'in-progress' });
 
     try {
-      const res = await axiosInstance.post(`/api/work-orders/${task.id}/start`, { startedAt: new Date().toISOString() });
-      const json = res.data as ApiResponse<WorkOrderDTO>;
-      if (json?.success && json.data) {
-        const w = json.data;
-        const updated: Task = {
-          ...task,
-            status: mapStatus(w.status ?? undefined) || 'in-progress',
-          assignedEmployeeName: w.assignedEmployeeName ?? task.assignedEmployeeName,
-          estimatedCost: w.estimatedCost ?? task.estimatedCost,
-          scheduledTime: w.estimatedCompletion ?? task.scheduledTime
-        };
-        setTasks(prev => prev.map(t => t.id === task.id ? updated : t));
-        setSelectedTask(updated);
-        // remember this task as started locally so UI won't revert
-        setStartedTasks(prev => new Set(prev).add(String(task.id)));
-        // fetch full list to reconcile statuses for all tasks
-        try {
-          const listRes = await axiosInstance.get<ApiResponse<WorkOrderDTO[]>>('/api/work-orders/available');
-          const listJson = listRes.data;
-          if (listJson?.success && Array.isArray(listJson.data)) {
-            const mapped: Task[] = listJson.data.map((w) => ({
-              id: String(w.id),
-              title: w.title ?? w.type ?? 'Work Order',
-              vehicleModel: w.vehicleDetails ?? '',
-              customerName: w.customerName ?? '',
-              location: '',
-              scheduledTime: w.estimatedCompletion ?? w.createdAt ?? new Date().toISOString(),
-              estimatedDuration: '',
-              priority: '',
-              status: (w.status ? (String(w.status).toLowerCase() === 'assigned' ? 'in-progress' : String(w.status).toLowerCase()) : 'scheduled'),
-              description: w.description ?? w.statusMessage ?? '',
-              customerPhone: '',
-              customerEmail: '',
-              requiredParts: [],
-              specialInstructions: '',
-              estimatedCost: w.estimatedCost ?? null,
-              statusMessage: w.statusMessage ?? null,
-              assignedEmployeeName: w.assignedEmployeeName ?? null,
-              appointmentId: w.appointmentId ?? null,
-              vehicleId: w.vehicleId ?? null,
-              createdAt: w.createdAt ?? null,
-              updatedAt: w.updatedAt ?? null
-            }));
-            setTasks(mapped);
-            // ensure local started override remains
-            setStartedTasks(prev => new Set(prev).add(String(task.id)));
-            // update selectedTask from the fresh list
-            const fresh = mapped.find(m => m.id === String(task.id));
-            if (fresh) setSelectedTask(fresh);
-          }
-        } catch {
-          // ignore list refresh errors for now
+      // Backend expects PUT /api/work-orders/{id}/status with { status: 'IN_PROGRESS' }
+  const bodyStart: Record<string, unknown> = { status: 'IN_PROGRESS', appointmentId: task.appointmentId ?? null };
+      console.log('PUT', `/api/work-orders/${task.id}/status`, bodyStart);
+      await axiosInstance.put(`/api/work-orders/${task.id}/status`, bodyStart, { headers: { 'Content-Type': 'application/json' } });
+
+  // optimistic local mark and remember this task as started locally so UI won't revert while we refresh
+  setTasks(prev => prev.map(t => t.id === task.id ? { ...t, status: 'in-progress' } : t));
+  setStartedTasks(prev => new Set(prev).add(String(task.id)));
+
+      // refresh full list to reconcile statuses for all tasks
+      try {
+        const freshList = await fetchWorkOrders();
+        if (freshList) {
+          const fresh = freshList.find(m => m.id === String(task.id));
+          if (fresh) setSelectedTask(fresh);
         }
+      } catch (e) {
+        console.error('Failed to refresh tasks after start', e);
       }
-    } catch {
-      // revert optimistic update on error
+  } catch (err) {
+      // revert optimistic update on error and show a helpful message
       setTasks(prevTasks);
       setSelectedTask(prevSelected);
-      setError('Failed to start task — please try again');
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  if ((err as any)?.response?.status === 400) setError('Bad request when starting task (400)');
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  else if ((err as any)?.response?.status === 404) setError('Work order not found (404)');
+      else setError('Failed to start task — please try again');
     }
   };
 
-  // Complete task handler: call backend to mark as completed and refresh list
+  // Complete task handler: update status via PUT and refresh list
   const handleCompleteTask = async (task: Task) => {
     const prevTasks = tasks;
     const prevSelected = selectedTask;
@@ -243,42 +280,20 @@ export default function UpcomingTasksPage() {
       setTasks(prev => prev.map(t => t.id === task.id ? { ...t, status: 'completed' } : t));
       if (selectedTask?.id === task.id) setSelectedTask({ ...task, status: 'completed' });
 
-      await axiosInstance.post(`/api/work-orders/${task.id}/complete`, { completedAt: new Date().toISOString() });
+      // Backend expects PUT /api/work-orders/{id}/status with { status: 'COMPLETED' }
+      const bodyComplete = { status: 'COMPLETED', appointmentId: task.appointmentId ?? null };
+      console.log('PUT', `/api/work-orders/${task.id}/status`, bodyComplete);
+      await axiosInstance.put(`/api/work-orders/${task.id}/status`, bodyComplete, { headers: { 'Content-Type': 'application/json' } });
 
       // refresh full list
       try {
-        const listRes = await axiosInstance.get<ApiResponse<WorkOrderDTO[]>>('/api/work-orders/available');
-        const listJson = listRes.data;
-        if (listJson?.success && Array.isArray(listJson.data)) {
-          const mapped: Task[] = listJson.data.map((w) => ({
-            id: String(w.id),
-            title: w.title ?? w.type ?? 'Work Order',
-            vehicleModel: w.vehicleDetails ?? '',
-            customerName: w.customerName ?? '',
-            location: '',
-            scheduledTime: w.estimatedCompletion ?? w.createdAt ?? new Date().toISOString(),
-            estimatedDuration: '',
-            priority: '',
-              status: mapStatus(w.status ?? undefined) || 'scheduled',
-            description: w.description ?? w.statusMessage ?? '',
-            customerPhone: '',
-            customerEmail: '',
-            requiredParts: [],
-            specialInstructions: '',
-            estimatedCost: w.estimatedCost ?? null,
-            statusMessage: w.statusMessage ?? null,
-            assignedEmployeeName: w.assignedEmployeeName ?? null,
-            appointmentId: w.appointmentId ?? null,
-            vehicleId: w.vehicleId ?? null,
-            createdAt: w.createdAt ?? null,
-            updatedAt: w.updatedAt ?? null
-          }));
-          setTasks(mapped);
-          const fresh = mapped.find(m => m.id === String(task.id));
+        const freshList = await fetchWorkOrders();
+        if (freshList) {
+          const fresh = freshList.find(m => m.id === String(task.id));
           if (fresh) setSelectedTask(fresh);
         }
-      } catch {
-        // ignore
+      } catch (e) {
+        console.error('Failed to refresh tasks after complete', e);
       }
 
       // remove from local started override (it's completed now)
@@ -287,17 +302,22 @@ export default function UpcomingTasksPage() {
         s.delete(task.id);
         return s;
       });
-    } catch {
+      // remember completed locally so it remains visible until refresh/logout
+      setLocallyCompleted(prev => new Set(prev).add(String(task.id)));
+  } catch (err) {
       // revert on error
       setTasks(prevTasks);
       setSelectedTask(prevSelected);
-      setError('Failed to complete task — please try again');
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  if ((err as any)?.response?.status === 400) setError('Bad request when completing task (400)');
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  else if ((err as any)?.response?.status === 404) setError('Work order not found (404)');
+      else setError('Failed to complete task — please try again');
     }
   };
 
-  // apply local startedTasks override so UI shows in-progress until backend confirms later
-  const visibleTasks = tasks.map(t => startedTasks.has(t.id) ? { ...t, status: 'in-progress' } : t);
-  const visibleSelectedTask = selectedTask && startedTasks.has(selectedTask.id) ? { ...selectedTask, status: 'in-progress' } : selectedTask;
+  // compute selected task view from effectiveTasks (which already applies local overrides)
+  const visibleSelectedTask = selectedTask ? (effectiveTasks.find(t => t.id === selectedTask.id) ?? selectedTask) : selectedTask;
 
   return (
     <div className="space-y-6">
@@ -349,15 +369,17 @@ export default function UpcomingTasksPage() {
 
         <div className="lg:col-span-4">
           <TaskList
-            tasks={visibleTasks}
-            onTaskSelect={(task: Task) => setSelectedTask(task)}
-            selectedTask={visibleSelectedTask}
-            filters={filters}
+              tasks={filteredTasks}
+              onTaskSelect={(task: Task) => setSelectedTask(task)}
+              selectedTask={visibleSelectedTask}
+              filters={filters}
+              searchTerm={searchTerm}
+              onSearchChange={setSearchTerm}
           />
         </div>
 
         <div className="lg:col-span-5">
-          <TaskDetailPanel task={visibleSelectedTask} onStart={handleStartTask} onComplete={handleCompleteTask} />
+          <TaskDetailPanel task={visibleSelectedTask} onStart={handleStartTask} onComplete={handleCompleteTask} onRefresh={fetchWorkOrders} />
         </div>
       </div>
     </div>

@@ -1,6 +1,6 @@
 'use client';
 
-import { useState } from 'react';
+import React from 'react';
 import TaskCard from './TaskCard';
 import { Search } from 'lucide-react';
 import type { Task } from '../types';
@@ -13,16 +13,17 @@ interface TaskListProps {
     status: string;
     date: string;
   };
+  // lifted search state so parent can compute counts based on search as well
+  searchTerm: string;
+  onSearchChange: (value: string) => void;
 }
 
-export default function TaskList({ tasks, onTaskSelect, selectedTask, filters }: TaskListProps) {
-  const [searchTerm, setSearchTerm] = useState('');
+export default function TaskList({ tasks, onTaskSelect, selectedTask, filters, searchTerm, onSearchChange }: TaskListProps) {
 
   const filteredTasks = tasks.filter(task => {
-    const matchesSearch = 
-      task.title.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      task.vehicleModel.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      task.customerName.toLowerCase().includes(searchTerm.toLowerCase());
+    const q = searchTerm.toLowerCase();
+    const matchesSearch =
+      !q || task.title.toLowerCase().includes(q) || task.vehicleModel.toLowerCase().includes(q) || task.customerName.toLowerCase().includes(q);
 
     const matchesStatus = filters.status === 'all' || task.status === filters.status;
 
@@ -49,7 +50,7 @@ export default function TaskList({ tasks, onTaskSelect, selectedTask, filters }:
       }
     }
 
-  return matchesSearch && matchesStatus && matchesDate;
+    return matchesSearch && matchesStatus && matchesDate;
   });
 
   return (
@@ -59,7 +60,7 @@ export default function TaskList({ tasks, onTaskSelect, selectedTask, filters }:
         <input
           type="text"
           value={searchTerm}
-          onChange={(e) => setSearchTerm(e.target.value)}
+          onChange={(e) => onSearchChange(e.target.value)}
           placeholder="Search tasks by title, vehicle, or customer..."
           className="w-full bg-gray-800 border border-gray-700 rounded-lg pl-12 pr-4 py-3 text-white placeholder-gray-500 focus:outline-none focus:border-orange-500 focus:ring-2 focus:ring-orange-500/20 transition-all"
         />

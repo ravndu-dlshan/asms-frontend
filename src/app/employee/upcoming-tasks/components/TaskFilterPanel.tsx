@@ -68,23 +68,7 @@ export default function TaskFilterPanel({ filters, onFilterChange, onClearFilter
         </div>
       </div>
 
-      <div className="mt-6 pt-6 border-t border-gray-800">
-        <h4 className="text-sm font-semibold text-gray-400 uppercase tracking-wider mb-3">Quick Stats</h4>
-        <div className="space-y-2">
-          <div className="flex items-center justify-between text-sm">
-            <span className="text-gray-400">Today Tasks</span>
-            <span className="text-white font-semibold">5</span>
-          </div>
-          <div className="flex items-center justify-between text-sm">
-            <span className="text-gray-400">Upcoming</span>
-            <span className="text-white font-semibold">12</span>
-          </div>
-          <div className="flex items-center justify-between text-sm">
-            <span className="text-gray-400">Overdue</span>
-            <span className="text-red-400 font-semibold">2</span>
-          </div>
-        </div>
-      </div>
+      {/* Quick stats removed — counts are shown in the top dashboard */}
     </div>
   );
 }

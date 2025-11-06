@@ -4,6 +4,8 @@
 import { useState } from 'react';
 // router navigation removed: using window.open for external tab navigation to keep modal open
 import { Car, User, MapPin, Calendar, Clock, FileText, Wrench, AlertCircle, AlertTriangle, Phone, Mail, Check } from 'lucide-react';
+import ErrorPopUp from '@/app/components/ErrorPopuUp';
+import axiosInstance from '@/app/lib/axios';
 import { formatDateTime, getPriorityColor, getStatusColor, formatCurrencyLKR } from '../../utils';
 import type { Task } from '../types';
 
@@ -11,20 +13,28 @@ interface TaskDetailPanelProps {
   task: Task | null;
   onStart?: (task: Task) => Promise<void>;
   onComplete?: (task: Task) => Promise<void>;
+  // optional callback to let parent refresh the list after a successful update
+  onRefresh?: () => Promise<Task[] | void>;
 }
 
-export default function TaskDetailPanel({ task, onStart, onComplete }: TaskDetailPanelProps) {
+export default function TaskDetailPanel({ task, onStart, onComplete, onRefresh }: TaskDetailPanelProps) {
   const [showStartModal, setShowStartModal] = useState(false);
   // no router needed here
   const [startConfirmed, setStartConfirmed] = useState(false);
   const [completedConfirmed, setCompletedConfirmed] = useState(false);
+  const [isStarting, setIsStarting] = useState(false);
+  const [isCompleting, setIsCompleting] = useState(false);
+  const [popupOpen, setPopupOpen] = useState(false);
+  const [popupMsg, setPopupMsg] = useState('');
+  const [successMessage, setSuccessMessage] = useState('');
 
   // helper to map status to step index
   const statusToStep = (status?: string | null) => {
     if (!status) return 0;
     const s = String(status).toLowerCase();
     if (s === 'scheduled' || s === 'unassigned') return 0;
-    if (s === 'in-progress' || s === 'assigned') return 1;
+    // treat 'assigned' as scheduled (0) per updated UX rules; only 'in-progress' maps to step 1
+    if (s === 'in-progress') return 1;
     if (s === 'completed' || s === 'done') return 2;
     return 0;
   };
@@ -256,7 +266,12 @@ export default function TaskDetailPanel({ task, onStart, onComplete }: TaskDetai
             </div>
 
             {/* success message shown after confirming start */}
-            {startConfirmed && (
+            {successMessage ? (
+              <div className="mb-4 p-3 rounded-lg bg-green-900/60 border border-green-800 text-green-200 flex items-start justify-between">
+                <div>{successMessage}</div>
+                <button onClick={() => setSuccessMessage('')} className="ml-4 text-sm text-green-100 underline">Dismiss</button>
+              </div>
+            ) : startConfirmed && (
               <div className="mb-4 p-3 rounded-lg bg-green-900/60 border border-green-800 text-green-200">
                 Task started — good luck with your work!
               </div>
@@ -292,20 +307,47 @@ export default function TaskDetailPanel({ task, onStart, onComplete }: TaskDetai
                   return (
                     <button
                       onClick={async () => {
-                        // set local confirmation state and call parent handler; do NOT auto-close
-                        setStartConfirmed(true);
+                        // set local in-flight and call parent handler if provided; otherwise perform PUT here
+                        setIsStarting(true);
                         try {
-                          if (onStart) await onStart(task);
+                          console.log(`Starting task via UI: id=${task.id}`);
+                          if (onStart) {
+                            console.log('Delegating start to parent onStart handler');
+                            await onStart(task);
+                          } else {
+                            console.log('No parent onStart provided — calling backend directly');
+                            const body = { status: 'IN_PROGRESS' };
+                            console.log('PUT', `/api/work-orders/${task.id}/status`, body);
+                            const res = await axiosInstance.put(`/api/work-orders/${task.id}/status`, body, { headers: { 'Content-Type': 'application/json' } });
+                            console.log('Start response', res?.status, res?.data);
+                          }
+                          setStartConfirmed(true);
+                          // show exact persistent success message required and keep modal open
+                          setSuccessMessage('✅ Work started! Good luck �');
+                          // refresh parent list if available
+                          if (typeof onRefresh === 'function') {
+                            try {
+                              await onRefresh();
+                            } catch (e) {
+                              console.warn('onRefresh failed', e);
+                            }
+                          }
                         } catch (err) {
-                          // revert local confirmed state on error
-                          console.error('Error starting task', err);
+                          // show popup on error
+                          // eslint-disable-next-line @typescript-eslint/no-explicit-any
+                          const e: any = err;
+                          console.error('Error starting task', e);
+                          setPopupMsg(e?.response?.data?.message ?? e?.message ?? 'Failed to start task');
+                          setPopupOpen(true);
                           setStartConfirmed(false);
+                        } finally {
+                          setIsStarting(false);
                         }
                       }}
-                      disabled={startConfirmed}
-                      className={`px-4 py-2 ${startConfirmed ? 'bg-green-700 text-white/80' : 'bg-gradient-to-r from-green-500 to-green-600 text-white hover:from-green-600 hover:to-green-700'} rounded-lg transition-all font-medium`}
+                      disabled={isStarting || startConfirmed}
+                      className={`px-4 py-2 ${isStarting || startConfirmed ? 'bg-green-700 text-white/80' : 'bg-gradient-to-r from-green-500 to-green-600 text-white hover:from-green-600 hover:to-green-700'} rounded-lg transition-all font-medium`}
                     >
-                      {startConfirmed ? 'Started ✓' : 'Confirm Start'}
+                      {isStarting ? 'Starting...' : startConfirmed ? 'Started ✓' : 'Confirm Start'}
                     </button>
                   );
                 }
@@ -315,19 +357,45 @@ export default function TaskDetailPanel({ task, onStart, onComplete }: TaskDetai
                   return (
                     <button
                       onClick={async () => {
-                        // set local confirmation and call parent handler; keep modal open until user closes
-                        setCompletedConfirmed(true);
+                        setIsCompleting(true);
                         try {
-                          if (onComplete) await onComplete(task);
+                          console.log(`Completing task via UI: id=${task.id}`);
+                          if (onComplete) {
+                            console.log('Delegating complete to parent onComplete handler');
+                            await onComplete(task);
+                          } else {
+                            console.log('No parent onComplete provided — calling backend directly');
+                            const body = { status: 'COMPLETED' };
+                            console.log('PUT', `/api/work-orders/${task.id}/status`, body);
+                            const res = await axiosInstance.put(`/api/work-orders/${task.id}/status`, body, { headers: { 'Content-Type': 'application/json' } });
+                            console.log('Complete response', res?.status, res?.data);
+                          }
+                          setCompletedConfirmed(true);
+                          // show exact persistent completion message and keep modal open
+                          setSuccessMessage('🎉 Task Completed! Great work!');
+                          // refresh parent list if available
+                          if (typeof onRefresh === 'function') {
+                            try {
+                              await onRefresh();
+                            } catch (e) {
+                              console.warn('onRefresh failed', e);
+                            }
+                          }
                         } catch (err) {
-                          console.error('Error completing task', err);
+                          // eslint-disable-next-line @typescript-eslint/no-explicit-any
+                          const e: any = err;
+                          console.error('Error completing task', e);
+                          setPopupMsg(e?.response?.data?.message ?? e?.message ?? 'Failed to complete task');
+                          setPopupOpen(true);
                           setCompletedConfirmed(false);
+                        } finally {
+                          setIsCompleting(false);
                         }
                       }}
-                      disabled={completedConfirmed}
-                      className={`px-4 py-2 ${completedConfirmed ? 'bg-indigo-700 text-white/80' : 'bg-gradient-to-r from-indigo-500 to-indigo-600 text-white hover:from-indigo-600 hover:to-indigo-700'} rounded-lg transition-all font-medium`}
+                      disabled={isCompleting || completedConfirmed}
+                      className={`px-4 py-2 ${isCompleting || completedConfirmed ? 'bg-indigo-700 text-white/80' : 'bg-gradient-to-r from-indigo-500 to-indigo-600 text-white hover:from-indigo-600 hover:to-indigo-700'} rounded-lg transition-all font-medium`}
                     >
-                      {completedConfirmed ? 'Completed ✓' : 'Mark Completed'}
+                      {isCompleting ? 'Completing...' : completedConfirmed ? 'Completed ✓' : 'Mark Completed'}
                     </button>
                   );
                 }
@@ -351,6 +419,8 @@ export default function TaskDetailPanel({ task, onStart, onComplete }: TaskDetai
           </div>
         </div>
       )}
+      {/* Error popup shown when API calls fail */}
+      <ErrorPopUp open={popupOpen} onClose={() => setPopupOpen(false)} title="Action failed" message={popupMsg} type="error" />
     </div>
   );
 }
