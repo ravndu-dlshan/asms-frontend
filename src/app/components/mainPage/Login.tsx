@@ -61,14 +61,14 @@ export default function Login() {
 					role: response.role,
 				}, 3600); // 1 hour expiry
 				
-				// Wait for animation to complete, then redirect
+				// Show success message briefly, then redirect quickly
+				setMessage("Login Successful!");
+				setShowSuccess(true);
+				
+				// Reduced delay for faster redirect
 				setTimeout(() => {
-					setShowSuccess(false);
-					// Wait for fade-out animation
-					setTimeout(() => {
-						redirectUser(response.role);
-					}, 300);
-				}, 1500);
+					redirectUser(response.role);
+				}, 500); // Reduced from 1800ms to 500ms
 			} else {
 				setErrorPopup({ open: true, message: "Login failed. Please try again.", type: "error" });
 				setMessage(null);
