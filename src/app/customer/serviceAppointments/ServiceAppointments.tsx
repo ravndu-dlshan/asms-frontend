@@ -1,16 +1,17 @@
 'use client';
 
 import { useState, useEffect } from 'react';
-import Navbar from '../components/navbar';
-import FooterSection from '../components/footer';
-import ChatBot from '../components/ChatBot';
 import CarDetailsForm from './components/CarDetailsForm';
 import AppointmentForm from './components/AppointmentForm';
-import AppointmentList from './components/AppointmentList';
-import type { CarDetails, Appointment } from './types';
+import type { CarDetails, Appointment, ServiceRecord } from './types';
 import axiosInstance from '@/app/lib/axios';
 
-export default function CustomerAppointments() {
+
+interface ServiceProps {
+  service: ServiceRecord;
+}
+
+const ServiceAppointments: React.FC<ServiceProps> = ({ service }) => {
   const [cars, setCars] = useState<CarDetails[]>([]);
   const [appointments, setAppointments] = useState<Appointment[]>([]);
   const [vehicleLoading, setVehicleLoading] = useState(false);
@@ -63,31 +64,15 @@ export default function CustomerAppointments() {
     setCars([...cars, car]);
   };
 
-  const handleBookAppointment = (appointmentData: Omit<Appointment, 'id' | 'status' | 'createdAt'>) => {
-    const newAppointment: Appointment = {
-      ...appointmentData,
-      id: `apt-${Date.now()}`,
-      status: 'pending',
-      createdAt: new Date().toISOString()
-    };
-
-    setAppointments([...appointments, newAppointment]);
-  };
-
-  const handleCancelAppointment = (appointmentId: string) => {
-    setAppointments(appointments.map(apt => 
-      apt.id === appointmentId ? { ...apt, status: 'cancelled' as const } : apt
-    ));
-  };
 
   return (
     <>
-      <div className="min-h-screen bg-gradient-to-b from-gray-950 via-gray-900 to-gray-950">
+      <div className=" min-h-screen bg-gradient-to-b from-gray-950 via-gray-900 to-gray-950">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-12">
           {/* Header */}
           <div className="text-center mb-12">
             <h1 className="text-4xl md:text-5xl font-bold text-white mb-4">
-              Manage Your <span className="text-orange-500">Appointments</span>
+              Manage Your <span className="text-orange-500">Service Appointments</span>
             </h1>
             <p className="text-gray-400 text-lg max-w-2xl mx-auto">
               Add your vehicle details and book appointments with our expert mechanics
@@ -105,17 +90,12 @@ export default function CustomerAppointments() {
 
           {/* Appointment Form Section */}
           <div className="mb-8">
-            <AppointmentForm cars={cars} onBookAppointment={handleBookAppointment} />
+            <AppointmentForm cars={cars} service={service} />
           </div>
-
-          {/* Appointments List Section */}
-          <AppointmentList 
-            appointments={appointments} 
-            onCancelAppointment={handleCancelAppointment}
-          />
         </div>
       </div>
     </>
   );
 }
 
+export default ServiceAppointments;

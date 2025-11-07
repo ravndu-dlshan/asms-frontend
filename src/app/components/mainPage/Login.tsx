@@ -61,14 +61,14 @@ export default function Login() {
 					role: response.role,
 				}, 3600); // 1 hour expiry
 				
-				// Wait for animation to complete, then redirect
+				// Show success message briefly, then redirect quickly
+				setMessage("Login Successful!");
+				setShowSuccess(true);
+				
+				// Reduced delay for faster redirect
 				setTimeout(() => {
-					setShowSuccess(false);
-					// Wait for fade-out animation
-					setTimeout(() => {
-						redirectUser(response.role);
-					}, 300);
-				}, 1500);
+					redirectUser(response.role);
+				}, 500); // Reduced from 1800ms to 500ms
 			} else {
 				setErrorPopup({ open: true, message: "Login failed. Please try again.", type: "error" });
 				setMessage(null);
@@ -263,7 +263,7 @@ export default function Login() {
 											<circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
 											<path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
 										</svg>
-										{message?.includes('Successful') ? 'Almost There...' : 'Signing In...'}
+										{message?.includes('Successful') ? 'Logging You In...' : 'Signing In...'}
 									</span>
 								) : (
 									'Sign In'

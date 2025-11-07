@@ -3,6 +3,9 @@ import { getCookie } from '@/app/lib/cookies';
 
 const CHATBOT_BASE_URL = process.env.NEXT_PUBLIC_CHATBOT_URL || 'http://localhost:8000';
 
+console.log('🤖 Chatbot Backend Configuration:');
+console.log('- Base URL:', CHATBOT_BASE_URL);
+
 // Create axios instance for chatbot
 const chatbotAxios = axios.create({
     baseURL: CHATBOT_BASE_URL,
@@ -14,23 +17,55 @@ const chatbotAxios = axios.create({
 // Add request interceptor to include auth token if needed
 chatbotAxios.interceptors.request.use(
     (config) => {
-        // Get auth token from cookie
-        const token = getCookie('authToken');
+        console.log(`🤖 Making ${config.method?.toUpperCase()} request to chatbot: ${config.url}`);
+        
+        // Get access token from cookie (updated from authToken to accessToken)
+        const token = getCookie('accessToken');
         if (token) {
+            console.log('🔑 Adding Bearer token to chatbot request');
+            console.log('🔑 Token (first 20 chars):', token.substring(0, 20) + '...');
             config.headers.Authorization = `Bearer ${token}`;
+        } else {
+            console.warn('⚠️ No access token found for chatbot request');
         }
+        
+        console.log('📋 Chatbot request headers:', config.headers);
+        if (config.data) {
+            console.log('📋 Chatbot request body:', config.data);
+        }
+        
         return config;
     },
     (error) => {
+        console.error('❌ Chatbot request interceptor error:', error);
         return Promise.reject(error);
     }
 );
 
 // Add response interceptor for error handling
 chatbotAxios.interceptors.response.use(
-    (response) => response,
+    (response) => {
+        console.log(`✅ Chatbot response received from ${response.config.url}:`, response.status);
+        console.log('📥 Chatbot response data:', response.data);
+        return response;
+    },
     (error) => {
-        console.error('Chatbot API Error:', error.response?.data || error.message);
+        console.error('❌ Chatbot API Error:');
+        if (error.response) {
+            console.error('- Status:', error.response.status);
+            console.error('- Data:', error.response.data);
+            console.error('- Headers:', error.response.headers);
+            
+            // Check for authentication errors
+            if (error.response.status === 401) {
+                console.error('🔒 Authentication failed - token may be invalid or expired');
+            }
+        } else if (error.request) {
+            console.error('- No response received from chatbot backend');
+            console.error('- Request:', error.request);
+        } else {
+            console.error('- Error:', error.message);
+        }
         return Promise.reject(error);
     }
 );

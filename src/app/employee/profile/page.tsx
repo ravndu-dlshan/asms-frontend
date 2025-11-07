@@ -25,11 +25,6 @@ export default function ProfileSection() {
         name: `${storedUser.firstName} ${storedUser.lastName}`.trim(),
         email: storedUser.email,
         role: storedUser.role,
-        phone: "",
-        address: "",
-        dateOfBirth: "",
-        joinedDate: "",
-        profileImage: "",
       });
     }
   }, []);
@@ -50,9 +45,6 @@ export default function ProfileSection() {
               <h1 className="text-3xl font-bold text-white mb-1 drop-shadow-lg">
                 {user.name || "N/A"}
               </h1>
-              <p className="text-gray-200 text-lg font-medium drop-shadow">
-                {user.role || ""}
-              </p>
             </div>
           </div>
 
@@ -71,30 +63,15 @@ export default function ProfileSection() {
                 </div>
 
                 <div className="bg-gray-800/50 rounded-xl p-4 border border-gray-700">
-                  <p className="text-gray-400 text-sm">Date of Birth</p>
-                  <p className="text-white font-medium">{user.dateOfBirth}</p>
-                </div>
-
-                <div className="bg-gray-800/50 rounded-xl p-4 border border-gray-700">
                   <p className="text-gray-400 text-sm">Email Address</p>
                   <p className="text-white font-medium break-all">
                     {user.email}
                   </p>
                 </div>
-
-                <div className="bg-gray-800/50 rounded-xl p-4 border border-gray-700">
-                  <p className="text-gray-400 text-sm">Contact Number</p>
-                  <p className="text-white font-medium">{user.phone}</p>
-                </div>
-
-                <div className="bg-gray-800/50 rounded-xl p-4 border border-gray-700 md:col-span-2">
-                  <p className="text-gray-400 text-sm">Address</p>
-                  <p className="text-white font-medium">{user.address}</p>
-                </div>
               </div>
             </div>
 
-            {/* Employment Info */}
+            {/* Employment Info  */}
             <div className="mb-8">
               <h2 className="text-xl font-semibold text-white mb-4 flex items-center gap-2">
                 <Briefcase className="w-5 h-5 text-orange-400" />
@@ -102,9 +79,12 @@ export default function ProfileSection() {
               </h2>
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                 <div className="bg-gray-800/50 rounded-xl p-4 border border-gray-700">
-                  <p className="text-gray-400 text-sm">Joined Date</p>
+                  <p className="text-gray-400 text-sm">Role</p>
                   <p className="text-white font-medium">
-                    {user.joinedDate || ""}
+                    {user.role
+                      ? user.role.charAt(0).toUpperCase() +
+                        user.role.slice(1).toLowerCase()
+                      : ""}
                   </p>
                 </div>
               </div>
