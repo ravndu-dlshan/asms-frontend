@@ -1,7 +1,8 @@
 // src/app/employee/work-log/components/TimeTracker.tsx
-'use client';
+"use client";
 
 import { useState, useEffect } from 'react';
+import { useSearchParams } from 'next/navigation';
 import { Play, Pause, Square, Clock } from 'lucide-react';
 
 export default function TimeTracker() {
@@ -21,6 +22,27 @@ export default function TimeTracker() {
 
     return () => clearInterval(interval);
   }, [isRunning, isPaused]);
+
+  // read query params to prefill task and optionally auto-start
+  const searchParams = useSearchParams();
+  useEffect(() => {
+    if (!searchParams) return;
+    const title = searchParams.get('title');
+    const description = searchParams.get('description');
+    const autoStart = searchParams.get('autoStart');
+    if (title) {
+      const combined = description ? `${title} - ${description}` : title;
+      setCurrentTask(combined);
+    }
+    if (autoStart === 'true' || autoStart === '1') {
+      if ((title || description) && !isRunning) {
+        setIsRunning(true);
+        setIsPaused(false);
+      }
+    }
+    // we intentionally don't add isRunning to deps to avoid restarting interval unexpectedly
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
 
   const formatTime = (seconds: number) => {
     const hours = Math.floor(seconds / 3600);

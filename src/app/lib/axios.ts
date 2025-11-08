@@ -28,6 +28,8 @@ const axiosInstance = axios.create({
   headers: {
     'Content-Type': 'application/json',
   },
+  // allow sending cookies to the backend (useful when auth cookie is httpOnly and server expects credentials)
+  withCredentials: true,
 });
 
 // Request interceptor
