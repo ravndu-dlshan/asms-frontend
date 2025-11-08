@@ -24,6 +24,8 @@ export default function TaskDetailPanel({ task, onStart, onComplete, onRefresh }
   const [completedConfirmed, setCompletedConfirmed] = useState(false);
   const [isStarting, setIsStarting] = useState(false);
   const [isCompleting, setIsCompleting] = useState(false);
+  const [isTracking, setIsTracking] = useState(false);
+  const [trackingStartAt, setTrackingStartAt] = useState<string | null>(null);
   const [popupOpen, setPopupOpen] = useState(false);
   const [popupMsg, setPopupMsg] = useState('');
   const [successMessage, setSuccessMessage] = useState('');
@@ -291,6 +293,35 @@ export default function TaskDetailPanel({ task, onStart, onComplete, onRefresh }
                   if (typeof window !== 'undefined') {
                     window.open(url, '_blank', 'noopener,noreferrer');
                   }
+
+                  // Start local tracking state and (best-effort) start the task in background
+                  const nowIso = new Date().toISOString();
+                  setTrackingStartAt(nowIso);
+                  setIsTracking(true);
+
+                  // If a parent onStart handler is provided, call it (don't await to keep modal open). Otherwise call backend directly.
+                  if (onStart) {
+                      onStart(task).catch((e) => {
+                      console.warn('onStart failed when starting tracking', e);
+                      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+                      setPopupMsg((e as any)?.response?.data?.message ?? (e as Error).message ?? 'Failed to start while tracking');
+                      setPopupOpen(true);
+                      setIsTracking(false);
+                      setTrackingStartAt(null);
+                    });
+                  } else {
+                    const body = { status: 'IN_PROGRESS' };
+                    axiosInstance.put(`/api/work-orders/${task.id}/status`, body, { headers: { 'Content-Type': 'application/json' } })
+                      .then(() => setStartConfirmed(true))
+                      .catch((e) => {
+                        console.error('Failed to start task when initiating tracking', e);
+                        // eslint-disable-next-line @typescript-eslint/no-explicit-any
+                        setPopupMsg((e as any)?.response?.data?.message ?? (e as Error).message ?? 'Failed to start task');
+                        setPopupOpen(true);
+                        setIsTracking(false);
+                        setTrackingStartAt(null);
+                      });
+                  }
                 }}
                 className="px-4 py-2 bg-gray-800 text-gray-300 rounded-lg hover:bg-gray-700 transition-colors font-medium border border-gray-700"
               >
@@ -360,6 +391,61 @@ export default function TaskDetailPanel({ task, onStart, onComplete, onRefresh }
                         setIsCompleting(true);
                         try {
                           console.log(`Completing task via UI: id=${task.id}`);
+                          // If tracking was started locally in this modal, create a worklog entry and calculate fee
+                                                    // Create a worklog entry for the task (best-effort).
+                                                    // If user tracked time locally, use those times; otherwise send nulls and rely on default task fee.
+                                                    let trackedMinutes: number | null = null;
+                                                    let calculatedCost: number | null = null;
+                                                    if (isTracking && trackingStartAt) {
+                            const start = new Date(trackingStartAt).getTime();
+                            const end = Date.now();
+                            const diffMs = Math.max(0, end - start);
+                            trackedMinutes = Math.ceil(diffMs / 60000);
+                            const halfHours = Math.ceil(trackedMinutes / 30);
+                            calculatedCost = halfHours * 500; // 500 LKR per half-hour
+
+
+                                                    // Determine cost to save: maximum of calculatedCost (0 if null) and task's default/estimated cost
+                                                    const defaultFee = (typeof task.estimatedCost === 'number' ? task.estimatedCost : 0);
+                                                    const costToSave = Math.max(calculatedCost ?? 0, defaultFee);
+
+                                                    try {
+                                                      const wlBody = {
+                                                        startTime: trackingStartAt ?? null,
+                                                        endTime: trackingStartAt ? new Date().toISOString() : null,
+                                                        durationMinutes: trackedMinutes ?? null,
+                                                        cost: costToSave,
+                                                        note: isTracking ? 'Auto-created from UI time tracker' : 'Auto-created on completion (no tracked time)'
+                                                      } as Record<string, unknown>;
+                                                      await axiosInstance.post(`/api/work-orders/${task.id}/worklogs`, wlBody, { headers: { 'Content-Type': 'application/json' } });
+                                                    } catch (e) {
+                                                      console.warn('Failed to create worklog, continuing to complete task', e);
+                                                      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+                                                      setPopupMsg((e as any)?.response?.data?.message ?? (e as Error).message ?? 'Failed to save worklog');
+                                                      setPopupOpen(true);
+                                                    }
+                            try {
+                              // final cost should be the max of calculated cost and task's default estimated cost
+                              const defaultFee = (typeof task.estimatedCost === 'number' && task.estimatedCost > 0) ? task.estimatedCost : 0;
+                              const finalCost = Math.max(calculatedCost ?? 0, defaultFee);
+
+                              const wlBody = {
+                                  startTime: trackingStartAt ?? null,
+                                  endTime: new Date().toISOString(),
+                                  durationMinutes: trackedMinutes,
+                                  calculatedCost: calculatedCost,
+                                  finalCost: finalCost,
+                                  note: 'Auto-created from UI time tracker'
+                                } as Record<string, unknown>;
+                                await axiosInstance.post(`/api/work-orders/${task.id}/worklogs`, wlBody, { headers: { 'Content-Type': 'application/json' } });
+                            } catch (e) {
+                              console.warn('Failed to create worklog, continuing to complete task', e);
+                              // eslint-disable-next-line @typescript-eslint/no-explicit-any
+                              setPopupMsg((e as any)?.response?.data?.message ?? (e as Error).message ?? 'Failed to save worklog');
+                              setPopupOpen(true);
+                            }
+                          }
+
                           if (onComplete) {
                             console.log('Delegating complete to parent onComplete handler');
                             await onComplete(task);
@@ -370,9 +456,11 @@ export default function TaskDetailPanel({ task, onStart, onComplete, onRefresh }
                             const res = await axiosInstance.put(`/api/work-orders/${task.id}/status`, body, { headers: { 'Content-Type': 'application/json' } });
                             console.log('Complete response', res?.status, res?.data);
                           }
+
                           setCompletedConfirmed(true);
-                          // show exact persistent completion message and keep modal open
-                          setSuccessMessage('🎉 Task Completed! Great work!');
+                          if (calculatedCost !== null) setSuccessMessage(`🎉 Task Completed! Great work! Bill: LKR ${calculatedCost}`);
+                          else setSuccessMessage('🎉 Task Completed! Great work!');
+
                           // refresh parent list if available
                           if (typeof onRefresh === 'function') {
                             try {
