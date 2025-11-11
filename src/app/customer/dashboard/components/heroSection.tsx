@@ -84,7 +84,9 @@ const CustomerDashboardHero = () => {
           <p className="text-gray-400 text-base max-w-md">
           Bring your ideas — we’ll handle the rest. From concept to completion, get your car modified by skilled experts with precision and style.
           </p>
+
           <Link href="/customer/customerAppoinments/">
+
             <button className="bg-orange-500 hover:bg-orange-600 text-white px-10 py-4 rounded-md font-semibold uppercase tracking-wide transition-all duration-300">
             START YOUR BUILD
             </button>

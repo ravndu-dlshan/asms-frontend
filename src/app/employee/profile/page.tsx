@@ -45,9 +45,6 @@ export default function ProfileSection() {
               <h1 className="text-3xl font-bold text-white mb-1 drop-shadow-lg">
                 {user.name || "N/A"}
               </h1>
-              <p className="text-gray-200 text-lg font-medium drop-shadow">
-                {user.role || ""}
-              </p>
             </div>
           </div>
 
@@ -71,11 +68,6 @@ export default function ProfileSection() {
                     {user.email}
                   </p>
                 </div>
-
-                <div className="bg-gray-800/50 rounded-xl p-4 border border-gray-700">
-                  <p className="text-gray-400 text-sm">Contact Number</p>
-                  <p className="text-white font-medium">{user.phone}</p>
-                </div>
               </div>
             </div>
 
@@ -87,14 +79,16 @@ export default function ProfileSection() {
               </h2>
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                 <div className="bg-gray-800/50 rounded-xl p-4 border border-gray-700">
-                  <p className="text-gray-400 text-sm">Joined Date</p>
+                  <p className="text-gray-400 text-sm">Role</p>
                   <p className="text-white font-medium">
-                    {user.joinedDate || ""}
+                    {user.role
+                      ? user.role.charAt(0).toUpperCase() +
+                        user.role.slice(1).toLowerCase()
+                      : ""}
                   </p>
                 </div>
               </div>
             </div>
-           
           </div>
         </div>
       </div>

@@ -3,7 +3,7 @@ import { getCookie } from "@/app/lib/cookies";
 export const getUserFromStorage = () => {
   try {
     const userInfoStr = getCookie("userInfo");
-    const token = getCookie("authToken");
+    const token = getCookie("authToken"); // Updated from authToken
 
     if (!userInfoStr || !token) {
       console.log("User info or token missing in cookies");
