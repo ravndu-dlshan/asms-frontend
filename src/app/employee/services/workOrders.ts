@@ -44,7 +44,6 @@ export const getWorkOrderSummary = async (): Promise<WorkOrderSummary> => {
   }
 };
 
-// Fetch all time logs for today and sum duration
 // Fetch total hours logged today
 export const getHoursLoggedToday = async (): Promise<number> => {
   try {

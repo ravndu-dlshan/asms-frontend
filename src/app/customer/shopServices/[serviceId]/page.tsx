@@ -183,7 +183,6 @@ const ShopServicePage = () => {
 
     return (
         <>
-            <Navbar />
             <ServiceCard services={services} title={title} description={description} setSelectedService={setSelectedService} />
             {selectedService && (
                 <div className="fixed inset-0 bg-black/60 z-50 flex items-center justify-center p-5">
@@ -214,8 +213,6 @@ const ShopServicePage = () => {
                     </div>
                 </div>
             )}
-
-            <FooterSection />
 
         </>
     );

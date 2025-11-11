@@ -141,11 +141,11 @@ export default function SignUp({ onBackToLogin }: Props) {
 			lastName: sanitizedLastName,
 			...(role === "Customer" && { 
 				address: sanitizedAddress,
-				phoneNumber: phoneNumber,
-				dateOfBirth: dob?.format('YYYY-MM-DD')
+				phone: phoneNumber,  // Changed from phoneNumber to phone
+				dateOfBirth: dob ? `${dob.format('YYYY-MM-DD')}T00:00:00.000Z` : undefined
 			}), // Only include for customers
 			password,
-			role: role
+			role: role.toUpperCase()  // Changed to uppercase (CUSTOMER, ADMIN)
 		};
 			try{
 				console.log(userData);
