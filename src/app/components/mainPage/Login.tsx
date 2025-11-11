@@ -42,7 +42,7 @@ export default function Login() {
 		}
 
 		setIsLoading(true);
-		setMessage("Attempting to log in…");
+		setMessage("Trying to log in…");
 		const loginData = { email: username, password };
 
 		try {
@@ -60,15 +60,11 @@ export default function Login() {
 					email: response.email,
 					role: response.role,
 				}, 3600); // 1 hour expiry
-				
-				// Show success message briefly, then redirect quickly
 				setMessage("Login Successful!");
 				setShowSuccess(true);
-				
-				// Reduced delay for faster redirect
 				setTimeout(() => {
 					redirectUser(response.role);
-				}, 500); // Reduced from 1800ms to 500ms
+				}, 500); 
 			} else {
 				setErrorPopup({ open: true, message: "Login failed. Please try again.", type: "error" });
 				setMessage(null);
@@ -159,7 +155,6 @@ export default function Login() {
 					</section>
 				) : (
 					<section className="bg-gray-800/80 backdrop-blur-sm rounded-2xl shadow-2xl border border-gray-700/50 p-8">
-						{/* Logo/Brand for login view */}
 						<div className="flex items-center justify-center mb-6">
 							<div className="w-10 h-10 bg-gradient-to-r from-orange-500 to-orange-600 rounded-lg flex items-center justify-center mr-2">
 								<svg className="w-5 h-5 text-white" fill="currentColor" viewBox="0 0 24 24">
@@ -177,7 +172,6 @@ export default function Login() {
 						</p>
 
 						<form onSubmit={handleLogin} className="space-y-5">
-							{/* Success Message with Fade Animation */}
 							{message && (
 								<div 
 									className={`rounded-lg px-4 py-3 text-sm border transition-all duration-500 ease-in-out transform ${
@@ -305,8 +299,6 @@ export default function Login() {
 					</section>
 				)}
 			</div>
-
-			{/* Error Popup */}
 			<ErrorPopUp
 				open={errorPopup.open}
 				onClose={() => setErrorPopup({ ...errorPopup, open: false })}

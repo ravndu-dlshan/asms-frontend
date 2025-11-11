@@ -20,6 +20,7 @@ export default function Navbar() {
     const [mobileServicesOpen, setMobileServicesOpen] = useState(false);
     const [userInfo, setUserInfo] = useState<UserInfo | null>(null);
     const [profileDropdownOpen, setProfileDropdownOpen] = useState(false);
+    const [showLogoutConfirm, setShowLogoutConfirm] = useState(false);
     const router = useRouter();
     const pathname = usePathname();
 
@@ -39,12 +40,21 @@ export default function Navbar() {
         }
     }, []);
 
-    const handleLogout = () => {
+    const handleLogoutClick = () => {
+        setShowLogoutConfirm(true);
+        setProfileDropdownOpen(false);
+    };
+
+    const confirmLogout = () => {
         // Clear auth cookies
         clearAuthCookies();
         
         // Navigate to home page
         router.replace('/');
+    };
+
+    const cancelLogout = () => {
+        setShowLogoutConfirm(false);
     };
 
     const closeMobileMenu = () => {
@@ -178,7 +188,7 @@ export default function Navbar() {
                                                 </div>
                                             </div>
                                             <button
-                                                onClick={handleLogout}
+                                                onClick={handleLogoutClick}
                                                 className="w-full flex items-center gap-3 px-5 py-3 hover:bg-gradient-to-r hover:from-red-500/20 hover:to-red-600/10 transition-all duration-200 text-sm text-left group"
                                             >
                                                 <LogOut className="w-4 h-4 text-gray-400 group-hover:text-red-400 transition-colors" />
@@ -339,7 +349,7 @@ export default function Navbar() {
                                 </div>
                                 <button
                                     onClick={() => {
-                                        handleLogout();
+                                        handleLogoutClick();
                                         closeMobileMenu();
                                     }}
                                     className="w-full flex items-center justify-center gap-2 bg-red-600 text-white rounded-full px-5 py-3 hover:bg-red-700 transition-all"
@@ -352,6 +362,59 @@ export default function Navbar() {
                     </div>
                 </div>
             </div>
+
+            {/* Logout Confirmation Modal */}
+            {showLogoutConfirm && (
+                <>
+                    {/* Backdrop */}
+                    <div 
+                        className="fixed inset-0 bg-black/60 backdrop-blur-sm z-[60] animate-in fade-in duration-200"
+                        onClick={cancelLogout}
+                    />
+                    
+                    {/* Modal */}
+                    <div className="fixed top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 z-[70] w-full max-w-md mx-4 animate-in zoom-in-95 duration-200">
+                        <div className="bg-gradient-to-br from-gray-800 to-gray-900 rounded-2xl shadow-2xl border border-gray-700/50 overflow-hidden">
+                            {/* Header */}
+                            <div className="bg-gradient-to-r from-orange-500/20 to-orange-600/20 border-b border-orange-500/30 p-6">
+                                <div className="flex items-center gap-4">
+                                    <div className="w-12 h-12 bg-orange-500/20 rounded-full flex items-center justify-center">
+                                        <LogOut className="w-6 h-6 text-orange-400" />
+                                    </div>
+                                    <div>
+                                        <h3 className="text-xl font-bold text-white">Confirm Logout</h3>
+                                        <p className="text-sm text-gray-300 mt-0.5">Are you sure you want to leave?</p>
+                                    </div>
+                                </div>
+                            </div>
+
+                            {/* Content */}
+                            <div className="p-6">
+                                <p className="text-gray-300 text-sm leading-relaxed">
+                                    You will be logged out of your account and redirected to the home page. 
+                                    You can log back in anytime to access your dashboard.
+                                </p>
+                            </div>
+
+                            {/* Actions */}
+                            <div className="flex gap-3 p-6 pt-0">
+                                <button
+                                    onClick={cancelLogout}
+                                    className="flex-1 px-4 py-3 bg-gray-700 hover:bg-gray-600 text-white rounded-xl font-medium transition-all duration-200 hover:scale-105"
+                                >
+                                    Cancel
+                                </button>
+                                <button
+                                    onClick={confirmLogout}
+                                    className="flex-1 px-4 py-3 bg-gradient-to-r from-orange-500 to-orange-600 hover:from-orange-600 hover:to-orange-700 text-white rounded-xl font-medium transition-all duration-200 hover:scale-105 shadow-lg hover:shadow-orange-500/50"
+                                >
+                                    Yes, Logout
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+                </>
+            )}
         </>
     );
 }

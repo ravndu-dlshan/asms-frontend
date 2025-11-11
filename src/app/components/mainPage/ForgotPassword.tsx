@@ -10,7 +10,7 @@ type Props = {
 };
 
 export default function ForgotPassword({ onBackToLogin }: Props) {
-    const [step, setStep] = useState<1 | 2>(1); // Step 1: Email, Step 2: OTP + Password
+    const [step, setStep] = useState<1 | 2>(1); 
     const [email, setEmail] = useState("");
     const [otp, setOtp] = useState("");
     const [newPassword, setNewPassword] = useState("");
@@ -308,8 +308,6 @@ export default function ForgotPassword({ onBackToLogin }: Props) {
                     </form>
                 )}
             </div>
-
-            {/* Error Popup */}
             <ErrorPopUp
                 open={errorPopup.open}
                 onClose={() => setErrorPopup({ ...errorPopup, open: false })}
