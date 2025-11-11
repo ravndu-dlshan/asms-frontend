@@ -53,8 +53,14 @@ const DEFAULT_STATS: StatCardData[] = [
 ];
 
 export default function StatCard({ loading, stats = DEFAULT_STATS }: StatCardProps) {
+  const colsClass =
+    stats.length === 3
+      ? "lg:grid-cols-3"
+      : stats.length === 2
+      ? "lg:grid-cols-2"
+      : "lg:grid-cols-4";
   return (
-    <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4 mb-6">
+    <div className={`grid grid-cols-1 md:grid-cols-2 ${colsClass} gap-4 mb-6`}>
       {stats.map((card) => {
         const Icon = card.icon;
         return (

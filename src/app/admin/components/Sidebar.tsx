@@ -5,9 +5,6 @@ import Link from "next/link";
 import { usePathname, useRouter } from "next/navigation";
 import {
   LayoutDashboard,
-  Users,
-  Briefcase,
-  Settings,
   LogOut,
   Menu,
   X,
@@ -44,21 +41,6 @@ const MENU_ITEMS: MenuItem[] = [
     href: "/admin/dashboard",
     icon: LayoutDashboard,
     label: "Dashboard",
-  },
-  {
-    href: "/admin/employees",
-    icon: Users,
-    label: "Employees",
-  },
-  {
-    href: "/admin/work-orders",
-    icon: Briefcase,
-    label: "Work Orders",
-  },
-  {
-    href: "/admin/settings",
-    icon: Settings,
-    label: "Settings",
   },
 ];
 

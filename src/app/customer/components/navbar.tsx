@@ -34,7 +34,7 @@ export default function Navbar() {
         clearAuthCookies();
         
         // Navigate to home page
-        router.replace('/');
+        router.replace('/customer');
     };
 
     const closeMobileMenu = () => {
