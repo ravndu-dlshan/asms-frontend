@@ -255,13 +255,19 @@ export default function ChatBot() {
                                                     <div className="text-sm leading-relaxed prose prose-invert prose-sm max-w-none
                                                         prose-headings:text-gray-200 prose-headings:font-semibold prose-headings:mt-4 prose-headings:mb-2
                                                         prose-p:text-gray-200 prose-p:my-2
-                                                        prose-a:text-orange-400 prose-a:no-underline hover:prose-a:text-orange-300
+                                                        prose-a:inline-flex prose-a:items-center prose-a:gap-1 prose-a:px-3 prose-a:py-2 
+                                                        prose-a:bg-gradient-to-r prose-a:from-orange-500 prose-a:to-orange-600 
+                                                        prose-a:hover:from-orange-600 prose-a:hover:to-orange-700 
+                                                        prose-a:text-white prose-a:no-underline prose-a:rounded-lg 
+                                                        prose-a:font-medium prose-a:shadow-lg prose-a:hover:shadow-orange-500/50 
+                                                        prose-a:transition-all prose-a:hover:scale-105 prose-a:my-2
                                                         prose-strong:text-white prose-strong:font-semibold
                                                         prose-code:text-orange-300 prose-code:bg-gray-900/50 prose-code:px-1 prose-code:py-0.5 prose-code:rounded
                                                         prose-pre:bg-gray-900 prose-pre:border prose-pre:border-gray-700
-                                                        prose-ul:list-disc prose-ul:ml-4 prose-ul:my-2
+                                                        prose-ul:list-none prose-ul:ml-0 prose-ul:my-3 prose-ul:space-y-2
                                                         prose-ol:list-decimal prose-ol:ml-4 prose-ol:my-2
-                                                        prose-li:text-gray-200 prose-li:my-1
+                                                        prose-li:text-gray-200 prose-li:my-1 prose-li:p-2 prose-li:bg-gray-700/30 
+                                                        prose-li:rounded-lg prose-li:border prose-li:border-gray-600/30
                                                         prose-blockquote:border-l-4 prose-blockquote:border-orange-500 prose-blockquote:pl-4 prose-blockquote:italic prose-blockquote:text-gray-300
                                                         prose-table:border-collapse prose-table:w-full
                                                         prose-th:border prose-th:border-gray-700 prose-th:bg-gray-800 prose-th:p-2 prose-th:text-left
@@ -271,7 +277,17 @@ export default function ChatBot() {
                                                             remarkPlugins={[remarkGfm]}
                                                             components={{
                                                                 a: ({ node, ...props }) => (
-                                                                    <a {...props} target="_blank" rel="noopener noreferrer" />
+                                                                    <a 
+                                                                        {...props} 
+                                                                        target="_blank" 
+                                                                        rel="noopener noreferrer"
+                                                                        className="inline-flex items-center gap-2"
+                                                                    >
+                                                                        {props.children}
+                                                                        <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                                                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M14 5l7 7m0 0l-7 7m7-7H3" />
+                                                                        </svg>
+                                                                    </a>
                                                                 ),
                                                             }}
                                                         >

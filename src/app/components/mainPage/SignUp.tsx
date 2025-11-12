@@ -38,12 +38,11 @@ export default function SignUp({ onBackToLogin }: Props) {
 	const [showConfirmPassword, setShowConfirmPassword] = useState(false);
 
 
-	// OTP dialog state
 	const [otpOpen, setOtpOpen] = useState(false);
 	const [otpCode, setOtpCode] = useState("");
 	const [otpError, setOtpError] = useState<string | null>(null);
 	const [activated, setActivated] = useState(false);
-	const router = useRouter(); //use the router to push the app to LogIn after registered
+	const router = useRouter(); 
 
 	// Input sanitization helper
 	const sanitizeInput = (input: string): string => {
@@ -122,7 +121,6 @@ export default function SignUp({ onBackToLogin }: Props) {
 				return;
 			}
 		} else {
-			// Admin/Employee don't need address, dob, phone
 			if (!sanitizedFirstName || !sanitizedLastName || !sanitizedEmail || !role || !password || !confirmPassword) {
 				setErrorPopup({ open: true, message: "Please fill in all fields.", type: "warning" });
 				return;
@@ -269,7 +267,7 @@ export default function SignUp({ onBackToLogin }: Props) {
 									type="text"
 									value={firstName}
 									onChange={(e) => setFirstName(e.target.value)}
-									placeholder="Navoda"
+									placeholder="First Name"
 									required
 									minLength={2}
 									maxLength={50}
@@ -285,7 +283,7 @@ export default function SignUp({ onBackToLogin }: Props) {
 									type="text"
 									value={lastName}
 									onChange={(e) => setLastName(e.target.value)}
-									placeholder="Chathurya"
+									placeholder="Last Name"
 									required
 									minLength={2}
 									maxLength={50}
@@ -315,195 +313,23 @@ export default function SignUp({ onBackToLogin }: Props) {
 										<label className="block text-sm font-medium text-gray-300 mb-2" htmlFor="dob">
 											Date of Birth <span className="text-orange-500">*</span>
 										</label>
-										<LocalizationProvider dateAdapter={AdapterDayjs}>
-											<DatePicker
-												value={dob}
-												onChange={(newValue) => setDob(newValue)}
-												maxDate={dayjs().subtract(18, 'year')}
-												minDate={dayjs('1950-01-01')}
-												format="DD/MM/YYYY"
-												views={['year', 'month', 'day']}
-												openTo="year"
-												slotProps={{
-													textField: {
-														fullWidth: true,
-														placeholder: "Select your date of birth",
-														required: role === "Customer",
-														sx: {
-															'& .MuiOutlinedInput-root': {
-																borderRadius: '12px',
-																backgroundColor: 'rgba(55, 65, 81, 0.5)',
-																backdropFilter: 'blur(4px)',
-																transition: 'all 0.2s',
-																'& fieldset': {
-																	borderColor: 'rgb(75, 85, 99)',
-																	borderWidth: '1px',
-																},
-																'&:hover fieldset': {
-																	borderColor: '#f97316',
-																},
-																'&.Mui-focused fieldset': {
-																	borderColor: '#f97316',
-																	borderWidth: '2px',
-																},
-																'&.Mui-focused': {
-																	backgroundColor: 'rgb(55, 65, 81)',
-																	boxShadow: '0 0 0 2px rgba(249, 115, 22, 0.3)',
-																},
-																'& input': {
-																	color: '#e5e7eb',
-																	padding: '12px 16px',
-																	'&::placeholder': {
-																		color: 'rgb(107, 114, 128)',
-																		opacity: 1,
-																	},
-																},
-															},
-															'& .MuiInputLabel-root': {
-																display: 'none',
-															},
-															'& .MuiIconButton-root': {
-																color: '#9ca3af',
-																transition: 'color 0.2s',
-																'&:hover': {
-																	color: '#f97316',
-																	backgroundColor: 'transparent',
-																},
-															},
-															'& .MuiSvgIcon-root': {
-																color: 'inherit',
-															},
-														},
-													},
-													popper: {
-														sx: {
-															'& .MuiPaper-root': {
-																backgroundColor: 'rgba(31, 41, 55, 0.98)',
-																backdropFilter: 'blur(12px)',
-																border: '1px solid rgba(107, 114, 128, 0.3)',
-																borderRadius: '12px',
-																boxShadow: '0 25px 50px -12px rgba(0, 0, 0, 0.5)',
-																'& .MuiPickersDay-root': {
-																	color: '#e5e7eb !important',
-																	'&:hover': {
-																		backgroundColor: 'rgba(249, 115, 22, 0.1)',
-																		color: '#ffffff !important',
-																	},
-																	'&.Mui-selected': {
-																		backgroundColor: '#f97316 !important',
-																		color: '#ffffff !important',
-																		fontWeight: 600,
-																		'& > *': {
-																			color: '#ffffff !important',
-																		},
-																		'&:hover': {
-																			backgroundColor: '#ea580c !important',
-																			color: '#ffffff !important',
-																		},
-																		'&:focus': {
-																			backgroundColor: '#f97316 !important',
-																			color: '#ffffff !important',
-																		},
-																	},
-																	'&.Mui-disabled': {
-																		color: '#6b7280 !important',
-																	},
-																},
-																'& .MuiPickersCalendarHeader-root': {
-																	color: '#f3f4f6 !important',
-																	'& .MuiPickersCalendarHeader-label': {
-																		color: '#f3f4f6 !important',
-																		fontWeight: 500,
-																	},
-																	'& .MuiSvgIcon-root': {
-																		color: '#f97316 !important',
-																	},
-																	'& .MuiIconButton-root': {
-																		color: '#f97316 !important',
-																	},
-																},
-																'& .MuiDayCalendar-weekDayLabel': {
-																	color: '#9ca3af !important',
-																	fontWeight: 500,
-																},
-																'& .MuiPickersYear-yearButton': {
-																	color: '#e5e7eb !important',
-																	fontSize: '0.95rem',
-																	'&:hover': {
-																		backgroundColor: 'rgba(249, 115, 22, 0.1)',
-																		color: '#ffffff !important',
-																	},
-																	'&.Mui-selected': {
-																		backgroundColor: '#f97316 !important',
-																		color: '#ffffff !important',
-																		fontWeight: 600,
-																		'& > *': {
-																			color: '#ffffff !important',
-																		},
-																		'&:hover': {
-																			backgroundColor: '#ea580c !important',
-																			color: '#ffffff !important',
-																		},
-																		'&:focus': {
-																			backgroundColor: '#f97316 !important',
-																			color: '#ffffff !important',
-																		},
-																	},
-																	'&.Mui-disabled': {
-																		color: '#6b7280 !important',
-																	},
-																},
-																'& .MuiTypography-root': {
-																	color: '#e5e7eb !important',
-																},
-																'& .MuiButtonBase-root': {
-																	color: '#e5e7eb !important',
-																	'&.Mui-selected': {
-																		color: '#ffffff !important',
-																	},
-																},
-																'& .MuiPickersMonth-monthButton': {
-																	color: '#e5e7eb !important',
-																	'&:hover': {
-																		backgroundColor: 'rgba(249, 115, 22, 0.1)',
-																		color: '#ffffff !important',
-																	},
-																	'&.Mui-selected': {
-																		backgroundColor: '#f97316 !important',
-																		color: '#ffffff !important',
-																		fontWeight: 600,
-																		'& > *': {
-																			color: '#ffffff !important',
-																		},
-																		'&:hover': {
-																			backgroundColor: '#ea580c !important',
-																			color: '#ffffff !important',
-																		},
-																		'&:focus': {
-																			backgroundColor: '#f97316 !important',
-																			color: '#ffffff !important',
-																		},
-																	},
-																},
-																// Global overrides to force white text on selected items
-																'& button.Mui-selected': {
-																	color: '#ffffff !important',
-																},
-																'& .Mui-selected *': {
-																	color: '#ffffff !important',
-																},
-																'& button': {
-																	color: '#e5e7eb !important',
-																},
-																'& span': {
-																	color: 'inherit',
-																},
-															},
-														},
-													},
-												}}
-											/>
-										</LocalizationProvider>
+										<input
+											id="dob"
+											type="date"
+											value={dob ? dob.format('YYYY-MM-DD') : ''}
+											onChange={(e) => {
+												if (e.target.value) {
+													setDob(dayjs(e.target.value));
+												} else {
+													setDob(null);
+												}
+											}}
+											max={dayjs().subtract(18, 'year').format('YYYY-MM-DD')}
+											min="1950-01-01"
+											required={role === "Customer"}
+											className="w-full rounded-xl border border-gray-600 bg-gray-700/50 backdrop-blur-sm px-4 py-3 text-gray-200 placeholder:text-gray-500 shadow-sm focus:border-orange-500 focus:ring-2 focus:ring-orange-500/30 focus:bg-gray-700 transition-all duration-200 [color-scheme:dark]"
+										/>
+										<p className="mt-1 text-xs text-gray-400">Must be at least 18 years old</p>
 									</div>
 									<div className="animate-fadeIn" style={{ animationDelay: '200ms' }}>
 										<label className="block text-sm font-medium text-gray-300 mb-2" htmlFor="phoneNumber">
