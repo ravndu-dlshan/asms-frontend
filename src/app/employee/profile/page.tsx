@@ -1,13 +1,15 @@
 'use client';
 
 import React, { useState, useEffect } from 'react';
+import { useRouter } from 'next/navigation';
 import { LogOut, User, Mail, Phone, MapPin, CalendarDays, Briefcase, Award, Star, Cake } from 'lucide-react';
+import { clearAuthCookies, getUserInfo } from '@/app/lib/cookies';
 
 interface UserProfile {
   name: string;
-  position: string;
+  position?: string;
   email: string;
-  phone: string;
+  phone?: string;
   department?: string;
   address?: string;
   dateOfBirth?: string;
@@ -19,45 +21,54 @@ interface UserProfile {
 
 export default function ProfileSection() {
   const [user, setUser] = useState<UserProfile | null>(null);
+  const router = useRouter();
 
-  // 🔹 Fetch user profile from backend (uncomment and modify endpoint)
-  /*
   useEffect(() => {
-    const fetchUserProfile = async () => {
-      try {
-        const response = await fetch('http://localhost:5173/api/user/profile');
-        const data = await response.json();
-        setUser(data);
-      } catch (error) {
-        console.error('Error fetching profile:', error);
-      }
-    };
-    fetchUserProfile();
-  }, []);
-  */
+    const storedInfo = getUserInfo();
+    if (!storedInfo) {
+      setUser(null);
+      return;
+    }
 
-  // 🔹 Example placeholder data
-  useEffect(() => {
+    const fullName = `${storedInfo.firstName ?? ''} ${storedInfo.lastName ?? ''}`.trim() || storedInfo.email;
+    const roleLabel = storedInfo.role ? storedInfo.role.charAt(0) + storedInfo.role.slice(1).toLowerCase() : 'Team Member';
+
     setUser({
-      name: 'Alex Johnson',
-      position: 'Senior Technician',
-      email: 'alex.johnson@example.com',
-      phone: '+94 77 123 4567',
-      department: 'Maintenance',
-      address: '123 Main Street, Colombo 03, Sri Lanka',
-      dateOfBirth: 'January 15, 1990',
-      joinedDate: 'March 12, 2022',
-      experience: '8 years',
-      talentedAreas: ['Equipment Repair', 'Preventive Maintenance', 'Safety Compliance', 'Team Leadership'],
-      profileImage: 'https://via.placeholder.com/120',
+      name: fullName,
+      position: roleLabel,
+      email: storedInfo.email,
+      phone: undefined,
+      department: undefined,
+      address: undefined,
+      dateOfBirth: undefined,
+      joinedDate: undefined,
+      experience: undefined,
+      talentedAreas: [],
+      profileImage: undefined,
     });
   }, []);
 
   const handleLogout = () => {
-    console.log('User logged out');
+    clearAuthCookies();
+    router.replace('/');
   };
 
-  if (!user) return null;
+  if (!user) {
+    return (
+      <div className="min-h-screen p-6 flex items-center justify-center">
+        <div className="max-w-xl w-full bg-gray-900 border border-gray-800 rounded-2xl p-10 text-center">
+          <h1 className="text-2xl font-semibold text-white mb-4">Profile information unavailable</h1>
+          <p className="text-gray-400 mb-6">We could not load your profile details. Please sign in again to continue.</p>
+          <button
+            onClick={handleLogout}
+            className="inline-flex items-center justify-center px-6 py-3 bg-gradient-to-r from-orange-500 to-orange-600 text-white rounded-lg hover:from-orange-600 hover:to-orange-700 transition-colors"
+          >
+            Go to sign in
+          </button>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div className="min-h-screen p-6 flex items-center justify-center">
@@ -68,11 +79,22 @@ export default function ProfileSection() {
           {/* Header Section with Profile Image */}
           <div className="bg-gradient-to-r from-orange-600/40 via-orange-200/30 to-orange-200/600 p-8 text-center relative backdrop-blur-sm">
             <div className="flex flex-col items-center">
-              <img
-                src={user.profileImage}
-                alt={user.name}
-                className="w-32 h-32 rounded-full border-4 border-white/80 shadow-xl object-cover mb-4 ring-4 ring-orange-400/30"
-              />
+              {user.profileImage ? (
+                <img
+                  src={user.profileImage}
+                  alt={user.name}
+                  className="w-32 h-32 rounded-full border-4 border-white/80 shadow-xl object-cover mb-4 ring-4 ring-orange-400/30"
+                />
+              ) : (
+                <div className="w-32 h-32 rounded-full border-4 border-white/80 shadow-xl mb-4 ring-4 ring-orange-400/30 bg-gradient-to-br from-orange-500 to-orange-600 flex items-center justify-center text-3xl font-semibold text-white">
+                  {user.name
+                    .split(' ')
+                    .filter(Boolean)
+                    .map((n) => n.charAt(0).toUpperCase())
+                    .slice(0, 2)
+                    .join('') || 'U'}
+                </div>
+              )}
               <h1 className="text-3xl font-bold text-white mb-1 drop-shadow-lg">{user.name}</h1>
               <p className="text-gray-200 text-lg font-medium drop-shadow">{user.position}</p>
             </div>
@@ -122,7 +144,7 @@ export default function ProfileSection() {
                     <Phone className="w-5 h-5 text-orange-400 mt-1 flex-shrink-0" />
                     <div>
                       <p className="text-gray-400 text-sm">Contact Number</p>
-                      <p className="text-white font-medium">{user.phone}</p>
+                      <p className="text-white font-medium">{user.phone ?? 'Not provided'}</p>
                     </div>
                   </div>
                 </div>
@@ -132,7 +154,7 @@ export default function ProfileSection() {
                     <MapPin className="w-5 h-5 text-orange-400 mt-1 flex-shrink-0" />
                     <div>
                       <p className="text-gray-400 text-sm">Address</p>
-                      <p className="text-white font-medium">{user.address}</p>
+                      <p className="text-white font-medium">{user.address ?? 'Not provided'}</p>
                     </div>
                   </div>
                 </div>
@@ -151,7 +173,7 @@ export default function ProfileSection() {
                     <Briefcase className="w-5 h-5 text-orange-400 mt-1 flex-shrink-0" />
                     <div>
                       <p className="text-gray-400 text-sm">Department</p>
-                      <p className="text-white font-medium">{user.department}</p>
+                      <p className="text-white font-medium">{user.department ?? 'Not provided'}</p>
                     </div>
                   </div>
                 </div>
@@ -161,7 +183,7 @@ export default function ProfileSection() {
                     <CalendarDays className="w-5 h-5 text-orange-400 mt-1 flex-shrink-0" />
                     <div>
                       <p className="text-gray-400 text-sm">Joined Date</p>
-                      <p className="text-white font-medium">{user.joinedDate}</p>
+                      <p className="text-white font-medium">{user.joinedDate ?? 'Not provided'}</p>
                     </div>
                   </div>
                 </div>
@@ -171,7 +193,7 @@ export default function ProfileSection() {
                     <Award className="w-5 h-5 text-orange-400 mt-1 flex-shrink-0" />
                     <div>
                       <p className="text-gray-400 text-sm">Experience</p>
-                      <p className="text-white font-medium">{user.experience}</p>
+                      <p className="text-white font-medium">{user.experience ?? 'Not provided'}</p>
                     </div>
                   </div>
                 </div>
@@ -186,7 +208,7 @@ export default function ProfileSection() {
               </h2>
               <div className="bg-gray-800/50 rounded-xl p-4 border border-gray-700">
                 <div className="flex flex-wrap gap-2">
-                  {user.talentedAreas?.map((area, index) => (
+                  {(user.talentedAreas && user.talentedAreas.length > 0 ? user.talentedAreas : ['No specialties listed'])?.map((area, index) => (
                     <span
                       key={index}
                       className="bg-gradient-to-r from-orange-400/80 to-rose-500/80 text-white px-4 py-2 rounded-full text-sm font-medium shadow-md backdrop-blur-sm"
