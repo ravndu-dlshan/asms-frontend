@@ -1,13 +1,14 @@
 'use client';
 import React, { useState, useRef } from 'react';
 import Link from 'next/link';
+
 interface ServiceCardData {
   id: string;
   title: string;
   description: string;
   backgroundImage?: string;
   hasReadMore?: boolean;
-  link:string;
+  link: string;
 }
 
 interface ServiceCardProps {
@@ -16,11 +17,12 @@ interface ServiceCardProps {
 }
 
 const ServiceCard: React.FC<ServiceCardProps> = ({ card, className = '' }) => {
-  const { title, description, backgroundImage, hasReadMore,link } = card;
+  const { title, description, backgroundImage, hasReadMore, link } = card;
 
   return (
-    <div
-      className={`relative rounded-2xl overflow-hidden w-[280px] h-[470px] group cursor-pointer transition-all duration-300 hover:scale-105 hover:shadow-lg ${className}`}
+    <Link
+      href={link}
+      className={`relative rounded-2xl overflow-hidden w-[280px] h-[470px] group transition-all duration-300 hover:scale-105 hover:shadow-lg block ${className}`}
       style={{
         backgroundImage: backgroundImage ? `url(${backgroundImage})` : 'none',
         backgroundSize: 'cover',
@@ -30,27 +32,27 @@ const ServiceCard: React.FC<ServiceCardProps> = ({ card, className = '' }) => {
     >
       {/* Overlay */}
       {backgroundImage && (
-        <div className="absolute inset-0 bg-black/40 group-hover:bg-black/30 transition-all duration-300" />
+        <div className="absolute inset-0 bg-black/40 group-hover:bg-black/30 transition-all duration-300 pointer-events-none" />
       )}
 
       {/* Content */}
       <div className="relative h-full flex flex-col justify-between p-6">
-        {/* Centered Button */}
+        {/* Centered "BOOK NOW" (for desktop hover) */}
         {hasReadMore && (
-          <div className="absolute inset-0 flex items-center justify-center md:opacity-0 group-hover:opacity-100 transition-all duration-300">
-            <Link href={link} className="bg-orange-500 text-white px-6 py-2 rounded-4xl text-sm md:text-base font-medium duration-200 shadow-lg transition-all transform hover:scale-105">
-              READ MORE
-            </Link>
+          <div className="absolute inset-0 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-all duration-300">
+            <span className="bg-orange-500 text-white px-6 py-2 rounded-4xl text-sm md:text-base font-medium duration-200 shadow-lg transition-all transform hover:scale-105">
+              BOOK NOW
+            </span>
           </div>
         )}
 
-        {/* Title & Description at Bottom */}
+        {/* Title & Description */}
         <div className="absolute bottom-0 w-full p-6 bg-gradient-to-t from-black/70 to-transparent">
           <h3 className="text-white font-semibold text-lg md:text-xl mb-2">{title}</h3>
-          <p className="text-white/90 text-sm md:text-base leading-relaxed">{description}</p>
+          <p className="text-white/90 text-sm">{description}</p>
         </div>
       </div>
-    </div>
+    </Link>
   );
 };
 
@@ -61,39 +63,39 @@ const ServiceSection: React.FC = () => {
   const sliderRef = useRef<HTMLDivElement>(null);
 
   const services: ServiceCardData[] = [
-  {
-    id: 'vehicle-repair',
-    title: 'Vehicle Repair',
-    description: 'Expert repair services for all types of vehicles — from minor fixes to major mechanical overhauls, ensuring your car runs like new.',
-    backgroundImage: './services/service1.jpg',
-    hasReadMore: true,
-    link:'customer/shopServices/vehicleRepair'
-  },
-  {
-    id: 'vehicle-servicing',
-    title: 'Vehicle Servicing',
-    description: 'Comprehensive vehicle servicing including engine checks, fluid top-ups, and performance inspections to maintain peak condition.',
-    backgroundImage: './services/service2.jpg',
-    hasReadMore: true,
-    link:'customer/shopServices/vehicleService'
-  },
-  {
-    id: 'collision-repair',
-    title: 'Collision Repair',
-    description: 'Professional body and frame repair for accident-damaged vehicles, restoring both appearance and safety to factory standards.',
-    backgroundImage: './services/service3.jpg',
-    hasReadMore: true,
-    link:'customer/shopServices/collisionRepair'
-  },
-  {
-    id: 'auto-detailing',
-    title: 'Auto Detailing',
-    description: 'Premium interior and exterior detailing to make your vehicle look spotless, polished, and protected from the elements.',
-    backgroundImage: './services/service4.jpeg',
-    hasReadMore: true,
-    link:'customer/shopServices/autoDetailing'
-  }
-];
+    {
+      id: 'vehicle-repair',
+      title: 'Vehicle Repair',
+      description: 'Expert repair services for all types of vehicles — from minor fixes to major mechanical overhauls, ensuring your car runs like new.',
+      backgroundImage: './services/service1.jpg',
+      hasReadMore: true,
+      link: 'customer/shopServices/vehicleRepair'
+    },
+    {
+      id: 'vehicle-servicing',
+      title: 'Vehicle Servicing',
+      description: 'Comprehensive vehicle servicing including engine checks, fluid top-ups, and performance inspections to maintain peak condition.',
+      backgroundImage: './services/service2.jpg',
+      hasReadMore: true,
+      link: 'customer/shopServices/vehicleService'
+    },
+    {
+      id: 'collision-repair',
+      title: 'Collision Repair',
+      description: 'Professional body and frame repair for accident-damaged vehicles, restoring both appearance and safety to factory standards.',
+      backgroundImage: './services/service3.jpg',
+      hasReadMore: true,
+      link: 'customer/shopServices/collisionRepair'
+    },
+    {
+      id: 'auto-detailing',
+      title: 'Auto Detailing',
+      description: 'Premium interior and exterior detailing to make your vehicle look spotless, polished, and protected from the elements.',
+      backgroundImage: './services/service4.jpeg',
+      hasReadMore: true,
+      link: 'customer/shopServices/autoDetailing'
+    }
+  ];
 
 
   const handleStart = (clientX: number) => {
@@ -166,6 +168,7 @@ const ServiceSection: React.FC = () => {
           ))}
         </div>
       </div>
+
     </div>
   );
 };

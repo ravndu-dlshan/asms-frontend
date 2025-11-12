@@ -1,19 +1,29 @@
 'use client';
+import { select } from 'motion/react-client';
 import React from 'react';
 
 interface ServiceCardType {
+  id:number;
   title: string;
   description: string;
   image: string;
+  price: string;
+  estimatedTime: string;
 }
 
 interface ServiceCardProps {
   services?: ServiceCardType[]; // optional
   title: string;
   description: string;
+  setSelectedService?: React.Dispatch<React.SetStateAction<ServiceCardType | null>>;
 }
 
-const ServiceCard: React.FC<ServiceCardProps> = ({ services = [], title, description }) => {
+const ServiceCard: React.FC<ServiceCardProps> = ({ services = [], title, description, setSelectedService }) => {
+
+  const handleSelectService = (service: ServiceCardType) => {
+    setSelectedService?.(service);
+  };
+
   return (
     <section className="py-16 px-4 min-h-screen bg-[#0d0d0d]">
       <div className="max-w-6xl mx-auto mb-12 text-center">
@@ -49,7 +59,9 @@ const ServiceCard: React.FC<ServiceCardProps> = ({ services = [], title, descrip
                 {service.description}
               </p>
 
-              <button className="bg-orange-600 hover:bg-orange-700 text-white font-semibold px-6 py-2.5 rounded transition-colors duration-300 shadow-lg hover:shadow-orange-600/50">
+              <button
+                onClick={() => handleSelectService(service)}
+                className="bg-orange-600 hover:bg-orange-700 text-white font-semibold px-6 py-2.5 rounded transition-colors duration-300 shadow-lg hover:shadow-orange-600/50">
                 Read more
               </button>
             </div>

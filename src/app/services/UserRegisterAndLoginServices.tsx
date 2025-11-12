@@ -37,8 +37,13 @@ export const loginUser = async (loginData: { email: string; password: string }) 
 
     const data = response.data;
     if (data?.token) {
-      // Store token in secure cookie (1 hour expiry)
+      // Store access token in secure cookie (1 hour expiry)
       setCookie('authToken', data.token, 3600);
+      
+      // Store refresh token in secure cookie (7 days expiry)
+      if (data.refreshToken) {
+        setCookie('refreshToken', data.refreshToken, 7 * 24 * 3600); // 7 days
+      }
       
       // Store user role in cookie as well
       if (data.role) {

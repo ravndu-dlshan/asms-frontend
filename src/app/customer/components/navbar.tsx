@@ -2,6 +2,7 @@
 
 import { useState, useEffect } from 'react';
 import Link from 'next/link';
+import { usePathname } from 'next/navigation';
 import { Phone, ChevronDown, X, Menu, LogOut } from 'lucide-react';
 import { useRouter } from 'next/navigation';
 import { clearAuthCookies, getUserInfo } from '@/app/lib/cookies';
@@ -20,6 +21,15 @@ export default function Navbar() {
     const [userInfo, setUserInfo] = useState<UserInfo | null>(null);
     const [profileDropdownOpen, setProfileDropdownOpen] = useState(false);
     const router = useRouter();
+    const pathname = usePathname();
+
+    // Helper function to check if a path is active
+    const isActive = (path: string) => {
+        if (path === '/customer' || path === '/customer/dashboard') {
+            return pathname === '/customer' || pathname === '/customer/dashboard';
+        }
+        return pathname?.startsWith(path);
+    };
 
     useEffect(() => {
         // Get user info from cookie
@@ -34,7 +44,7 @@ export default function Navbar() {
         clearAuthCookies();
         
         // Navigate to home page
-        router.replace('/');
+        router.replace('/customer');
     };
 
     const closeMobileMenu = () => {
@@ -61,15 +71,15 @@ export default function Navbar() {
                     {/* Desktop Navigation Links */}
                     <div className="hidden md:flex items-center space-x-8 flex-1">
                         <Link
-                            href="/"
-                            className="text-orange-500 hover:text-orange-400 transition-colors uppercase text-sm font-medium"
+                            href="/customer/dashboard"
+                            className={`${isActive('/customer/dashboard') || isActive('/customer') ? 'text-orange-500' : 'text-white'} hover:text-orange-400 transition-colors uppercase text-sm font-medium`}
                         >
                             Home
                         </Link>
 
                         <Link
-                            href="/about"
-                            className="hover:text-orange-500 transition-colors uppercase text-sm font-medium"
+                            href="/customer/aboutus"
+                            className={`${isActive('/customer/aboutus') ? 'text-orange-500' : 'text-white'} hover:text-orange-400 transition-colors uppercase text-sm font-medium`}
                         >
                             About
                         </Link>
@@ -80,7 +90,7 @@ export default function Navbar() {
                             onMouseEnter={() => setServicesOpen(true)}
                             onMouseLeave={() => setServicesOpen(false)}
                         >
-                            <button className="flex items-center gap-1 hover:text-orange-500 transition-colors uppercase text-sm font-medium">
+                            <button className={`flex items-center gap-1 ${isActive('/customer/shopServices') ? 'text-orange-500' : 'text-white'} hover:text-orange-400 transition-colors uppercase text-sm font-medium`}>
                                 Services
                                 <ChevronDown className="w-4 h-4" />
                             </button>
@@ -105,17 +115,17 @@ export default function Navbar() {
                         </div>
 
                         <Link
-                            href="/shop"
-                            className="hover:text-orange-500 transition-colors uppercase text-sm font-medium"
+                            href="/customer/myAppointments"
+                            className={`${isActive('/customer/myAppointments') ? 'text-orange-500' : 'text-white'} hover:text-orange-400 transition-colors uppercase text-sm font-medium`}
                         >
-                            Shop
+                            My Appointments
                         </Link>
 
                         <Link
-                            href="/contacts"
-                            className="hover:text-orange-500 transition-colors uppercase text-sm font-medium"
+                            href="/customer/vehicleProjects"
+                            className={`${isActive('/customer/vehicleProjects') ? 'text-orange-500' : 'text-white'} hover:text-orange-400 transition-colors uppercase text-sm font-medium`}
                         >
-                            Contacts
+                            My Vehicles
                         </Link>
                     </div>
 
@@ -225,16 +235,16 @@ export default function Navbar() {
                 <div className="overflow-y-auto h-[calc(100%-80px)] p-6">
                     <div className="space-y-2">
                         <Link
-                            href="/"
-                            className="block px-4 py-3 text-orange-500 hover:bg-[#2a2a2a] transition-colors uppercase text-sm font-medium rounded"
+                            href="/customer/dashboard"
+                            className={`block px-4 py-3 ${isActive('/customer/dashboard') || isActive('/customer') ? 'text-orange-500 bg-[#2a2a2a]' : 'text-white'} hover:bg-[#2a2a2a] hover:text-orange-400 transition-colors uppercase text-sm font-medium rounded`}
                             onClick={closeMobileMenu}
                         >
                             Home
                         </Link>
 
                         <Link
-                            href="/about"
-                            className="block px-4 py-3 hover:bg-[#2a2a2a] hover:text-orange-500 transition-colors uppercase text-sm font-medium rounded"
+                            href="/customer/aboutus"
+                            className={`block px-4 py-3 ${isActive('/customer/aboutus') ? 'text-orange-500 bg-[#2a2a2a]' : 'text-white'} hover:bg-[#2a2a2a] hover:text-orange-400 transition-colors uppercase text-sm font-medium rounded`}
                             onClick={closeMobileMenu}
                         >
                             About
@@ -243,7 +253,7 @@ export default function Navbar() {
                         {/* Mobile Services Dropdown */}
                         <div>
                             <button
-                                className="w-full flex items-center justify-between px-4 py-3 hover:bg-[#2a2a2a] hover:text-orange-500 transition-colors uppercase text-sm font-medium rounded"
+                                className={`w-full flex items-center justify-between px-4 py-3 ${isActive('/customer/shopServices') ? 'text-orange-500 bg-[#2a2a2a]' : 'text-white'} hover:bg-[#2a2a2a] hover:text-orange-400 transition-colors uppercase text-sm font-medium rounded`}
                                 onClick={() => setMobileServicesOpen(!mobileServicesOpen)}
                             >
                                 Services
@@ -252,44 +262,51 @@ export default function Navbar() {
                             <div className={`overflow-hidden transition-all duration-300 ${mobileServicesOpen ? 'max-h-48' : 'max-h-0'}`}>
                                 <div className="pl-4 py-1 space-y-1">
                                     <Link
-                                        href="/services/repair"
+                                        href="/customer/shopServices/vehicleRepair"
                                         className="block px-4 py-2 text-sm hover:text-orange-500 transition-colors rounded hover:bg-[#2a2a2a]"
                                         onClick={closeMobileMenu}
                                     >
-                                        Repair Services
+                                        Vehicle Repair
                                     </Link>
                                     <Link
-                                        href="/services/maintenance"
+                                        href="/customer/shopServices/vehicleService"
                                         className="block px-4 py-2 text-sm hover:text-orange-500 transition-colors rounded hover:bg-[#2a2a2a]"
                                         onClick={closeMobileMenu}
                                     >
-                                        Maintenance
+                                        Vehicle Servicing
                                     </Link>
                                     <Link
-                                        href="/services/diagnostics"
+                                        href="/customer/shopServices/collisionRepair"
                                         className="block px-4 py-2 text-sm hover:text-orange-500 transition-colors rounded hover:bg-[#2a2a2a]"
                                         onClick={closeMobileMenu}
                                     >
-                                        Diagnostics
+                                        Collision Repair
+                                    </Link>
+                                    <Link
+                                        href="/customer/shopServices/autoDetailing"
+                                        className="block px-4 py-2 text-sm hover:text-orange-500 transition-colors rounded hover:bg-[#2a2a2a]"
+                                        onClick={closeMobileMenu}
+                                    >
+                                        Auto Detailing
                                     </Link>
                                 </div>
                             </div>
                         </div>
 
                         <Link
-                            href="/shop"
-                            className="block px-4 py-3 hover:bg-[#2a2a2a] hover:text-orange-500 transition-colors uppercase text-sm font-medium rounded"
+                            href="/customer/myAppointments"
+                            className={`block px-4 py-3 ${isActive('/customer/myAppointments') ? 'text-orange-500 bg-[#2a2a2a]' : 'text-white'} hover:bg-[#2a2a2a] hover:text-orange-400 transition-colors uppercase text-sm font-medium rounded`}
                             onClick={closeMobileMenu}
                         >
-                            Shop
+                            My Appointments
                         </Link>
 
                         <Link
-                            href="/contacts"
-                            className="block px-4 py-3 hover:bg-[#2a2a2a] hover:text-orange-500 transition-colors uppercase text-sm font-medium rounded"
+                            href="/customer/vehicleProjects"
+                            className={`block px-4 py-3 ${isActive('/customer/vehicleProjects') ? 'text-orange-500 bg-[#2a2a2a]' : 'text-white'} hover:bg-[#2a2a2a] hover:text-orange-400 transition-colors uppercase text-sm font-medium rounded`}
                             onClick={closeMobileMenu}
                         >
-                            Contacts
+                            My Vehicles
                         </Link>
 
                         {/* Mobile Phone Button */}

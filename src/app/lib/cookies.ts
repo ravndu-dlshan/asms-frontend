@@ -51,7 +51,9 @@ export const deleteCookie = (name: string): void => {
  * Clear all auth-related cookies
  */
 export const clearAuthCookies = (): void => {
-  deleteCookie('authToken');
+  deleteCookie('accessToken');
+  deleteCookie('refreshToken');
+  deleteCookie('authToken'); // Keep for backward compatibility
   deleteCookie('token');
   deleteCookie('userRole');
   deleteCookie('userInfo');
