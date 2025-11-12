@@ -60,7 +60,7 @@ export async function middleware(req: NextRequest) {
     return NextResponse.next()
   } catch (err) {
     console.error('Middleware - Token verification error:', err)
-    return NextResponse.redirect(new URL('/', req.url))
+    return NextResponse.redirect(new URL('/employee', req.url))
   }
 }
 
