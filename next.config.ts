@@ -3,6 +3,7 @@ import type { NextConfig } from "next";
 const nextConfig: NextConfig = {
   // Enable standalone output for Docker
   output: 'standalone',
+  transpilePackages: ['@mui/material', '@mui/system', '@mui/x-date-pickers'],
   
   // Environment variables that should be available at build time
   env: {
