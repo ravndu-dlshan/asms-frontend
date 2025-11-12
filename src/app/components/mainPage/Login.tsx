@@ -28,7 +28,8 @@ export default function Login() {
 		}else if (role==="CUSTOMER"){
 			router.push("/customer");
 		}else if (role==="EMPLOYEE"){
-			router.push("/employee/dashboard");
+			console.log("employee found")
+			router.push("/employee");
 		}else{
 			router.push("/");
 		}
@@ -42,7 +43,7 @@ export default function Login() {
 		}
 
 		setIsLoading(true);
-		setMessage("Trying to log in…");
+		setMessage("Attempting to log in…");
 		const loginData = { email: username, password };
 
 		try {
@@ -70,7 +71,7 @@ export default function Login() {
 				setMessage(null);
 				setIsLoading(false);
 			}
-		} catch (error: any) {
+		} catch (error: unknown) {
 			setErrorPopup({ open: true, message: error.message || "An error occurred. Please try again.", type: "error" });
 			setMessage(null);
 			setIsLoading(false);

@@ -3,6 +3,7 @@
 import React, { useState, useEffect } from "react";
 import { User, Briefcase } from "lucide-react";
 import { getUserFromStorage } from "../utils/getUserFromCookies";
+//import { useRouter } from "next/router";
 
 interface UserProfile {
   name?: string;
@@ -17,7 +18,6 @@ interface UserProfile {
 
 export default function ProfileSection() {
   const [user, setUser] = useState<UserProfile | null>(null);
-  const router = useRouter();
 
   useEffect(() => {
     const storedUser = getUserFromStorage();
