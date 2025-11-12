@@ -28,15 +28,28 @@ const axiosInstance = axios.create({
   headers: {
     'Content-Type': 'application/json',
   },
+  // allow sending cookies to the backend (useful when auth cookie is httpOnly and server expects credentials)
+  withCredentials: true,
 });
 
 // Request interceptor
 axiosInstance.interceptors.request.use(
   (config) => {
     const token = getCookie('authToken');
+    
+    // Fallback to localStorage if cookie is not available
+    if (!token && typeof window !== 'undefined') {
+      token = localStorage.getItem('authToken');
+    }
+    
     if (token) {
       config.headers.Authorization = `Bearer ${token}`;
+      // Debug log to verify token is being added
+      console.log('🔑 Token attached to request:', config.url, 'Token exists:', !!token);
+    } else {
+      console.warn('⚠️ No auth token found for request:', config.url);
     }
+    
     return config;
   },
   (error) => {
