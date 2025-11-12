@@ -3,21 +3,20 @@
 
 import { useState } from 'react';
 import { Edit, Trash2, ChevronLeft, ChevronRight } from 'lucide-react';
-import { formatDate, formatCurrency } from '../../utils';
 
-interface WorkLog {
+interface TimeLog {
   id: string;
-  serviceType: string;
-  date: string;
-  hours: number;
-  basePay: number;
-  overtime: number;
-  bonus: number;
-  finalPay: number;
+  work_order_id?: string | number;
+  title?: string;
+  start_time?: string | null;
+  end_time?: string | null;
+  duration_minutes?: number | null;
+  amount?: number | null; // Added field for amount
+  service_description?: string | null; // Added field for service description
 }
 
 interface WorkLogTableProps {
-  logs: WorkLog[];
+  logs: TimeLog[];
 }
 
 export default function WorkLogTable({ logs }: WorkLogTableProps) {
@@ -39,70 +38,26 @@ export default function WorkLogTable({ logs }: WorkLogTableProps) {
         <table className="w-full">
           <thead className="bg-gray-800/50 border-b border-gray-800">
             <tr>
-              <th className="px-6 py-4 text-left text-xs font-semibold text-gray-400 uppercase tracking-wider">
-                Job ID
-              </th>
-              <th className="px-6 py-4 text-left text-xs font-semibold text-gray-400 uppercase tracking-wider">
-                Service Type
-              </th>
-              <th className="px-6 py-4 text-left text-xs font-semibold text-gray-400 uppercase tracking-wider">
-                Date
-              </th>
-              <th className="px-6 py-4 text-left text-xs font-semibold text-gray-400 uppercase tracking-wider">
-                Hours
-              </th>
-              <th className="px-6 py-4 text-left text-xs font-semibold text-gray-400 uppercase tracking-wider">
-                Base Pay
-              </th>
-              <th className="px-6 py-4 text-left text-xs font-semibold text-gray-400 uppercase tracking-wider">
-                Overtime
-              </th>
-              <th className="px-6 py-4 text-left text-xs font-semibold text-gray-400 uppercase tracking-wider">
-                Bonus
-              </th>
-              <th className="px-6 py-4 text-left text-xs font-semibold text-gray-400 uppercase tracking-wider">
-                Final Pay
-              </th>
-              <th className="px-6 py-4 text-left text-xs font-semibold text-gray-400 uppercase tracking-wider">
-                Actions
-              </th>
+              <th className="px-6 py-4 text-left text-xs font-semibold text-gray-400 uppercase tracking-wider">Job ID</th>
+              <th className="px-6 py-4 text-left text-xs font-semibold text-gray-400 uppercase tracking-wider">Service</th>
+              <th className="px-6 py-4 text-left text-xs font-semibold text-gray-400 uppercase tracking-wider">Start</th>
+              <th className="px-6 py-4 text-left text-xs font-semibold text-gray-400 uppercase tracking-wider">End</th>
+              <th className="px-6 py-4 text-left text-xs font-semibold text-gray-400 uppercase tracking-wider">Duration</th>
+              <th className="px-6 py-4 text-left text-xs font-semibold text-gray-400 uppercase tracking-wider">Amount (LKR)</th>
+              <th className="px-6 py-4 text-left text-xs font-semibold text-gray-400 uppercase tracking-wider">Actions</th>
             </tr>
           </thead>
           <tbody className="divide-y divide-gray-800">
             {paginatedLogs.map((log) => (
               <tr key={log.id} className="hover:bg-gray-800/50 transition-colors">
                 <td className="px-6 py-4 whitespace-nowrap">
-                  <span className="text-orange-400 font-semibold">{log.id}</span>
+                  <span className="text-orange-400 font-semibold">{log.work_order_id ?? log.id}</span>
                 </td>
-                <td className="px-6 py-4 whitespace-nowrap text-white font-medium">
-                  {log.serviceType}
-                </td>
-                <td className="px-6 py-4 whitespace-nowrap text-gray-300">
-                  {formatDate(log.date)}
-                </td>
-                <td className="px-6 py-4 whitespace-nowrap text-gray-300">
-                  {log.hours.toFixed(1)}
-                </td>
-                <td className="px-6 py-4 whitespace-nowrap text-gray-300">
-                  ${log.basePay}
-                </td>
-                <td className="px-6 py-4 whitespace-nowrap">
-                  {log.overtime > 0 ? (
-                    <span className="text-orange-400 font-medium">${log.overtime}</span>
-                  ) : (
-                    <span className="text-gray-500">-</span>
-                  )}
-                </td>
-                <td className="px-6 py-4 whitespace-nowrap">
-                  {log.bonus > 0 ? (
-                    <span className="text-green-400 font-medium">${log.bonus}</span>
-                  ) : (
-                    <span className="text-gray-500">-</span>
-                  )}
-                </td>
-                <td className="px-6 py-4 whitespace-nowrap">
-                  <span className="text-white font-bold">${log.finalPay}</span>
-                </td>
+                <td className="px-6 py-4 whitespace-nowrap text-white font-medium">{log.title ?? '-'}</td>
+                <td className="px-6 py-4 whitespace-nowrap text-gray-300">{log.start_time ? new Date(log.start_time).toLocaleString() : '-'}</td>
+                <td className="px-6 py-4 whitespace-nowrap text-gray-300">{log.end_time ? new Date(log.end_time).toLocaleString() : '-'}</td>
+                <td className="px-6 py-4 whitespace-nowrap text-gray-300">{log.duration_minutes != null ? `${(log.duration_minutes / 60).toFixed(2)} h` : '-'}</td>
+                <td className="px-6 py-4 whitespace-nowrap text-gray-300">{log.amount != null ? `LKR ${log.amount.toFixed(2)}` : '-'}</td>
                 <td className="px-6 py-4 whitespace-nowrap">
                   <div className="flex items-center space-x-2">
                     <button className="p-2 text-blue-400 hover:text-blue-300 hover:bg-blue-500/10 rounded-lg transition-colors">

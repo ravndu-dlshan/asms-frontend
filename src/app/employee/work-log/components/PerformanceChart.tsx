@@ -2,18 +2,54 @@
 
 import { LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer } from 'recharts';
 import { TrendingUp } from 'lucide-react';
+import { useEffect, useState } from 'react';
 
-const data = [
-  { day: 'Mon', hoursWorked: 8, targetHours: 8 },
-  { day: 'Tue', hoursWorked: 7, targetHours: 8 },
-  { day: 'Wed', hoursWorked: 9, targetHours: 8 },
-  { day: 'Thu', hoursWorked: 9, targetHours: 8 },
-  { day: 'Fri', hoursWorked: 8, targetHours: 8 },
-  { day: 'Sat', hoursWorked: 4, targetHours: 4 },
-  { day: 'Sun', hoursWorked: 0, targetHours: 0 }
-];
+interface Log {
+  start_time: string;
+  duration_minutes: number;
+}
 
-export default function PerformanceChart() {
+interface ChartData {
+  day: string;
+  hoursWorked: number;
+  targetHours: number;
+}
+
+export default function PerformanceChart({ logs }: { logs: Log[] }) {
+  const [chartData, setChartData] = useState<ChartData[]>([]);
+
+  useEffect(() => {
+    const daysOfWeek = ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'];
+
+    // Transform logs into chart data
+    const transformedData = logs.reduce((acc: ChartData[], log: Log) => {
+      const day = new Date(log.start_time).toLocaleDateString('en-US', { weekday: 'short' });
+      const hoursWorked = log.duration_minutes ? log.duration_minutes / 60 : 0;
+
+      const existingDay = acc.find((entry: ChartData) => entry.day === day);
+      if (existingDay) {
+        existingDay.hoursWorked += hoursWorked;
+      } else {
+        acc.push({ day, hoursWorked, targetHours: 8 });
+      }
+
+      return acc;
+    }, []);
+
+    // Ensure all days of the week are included
+    const completeData = daysOfWeek.map((day) => {
+      const existingDay = transformedData.find((entry: ChartData) => entry.day === day);
+      return existingDay || { day, hoursWorked: 0, targetHours: 8 };
+    });
+
+    setChartData(completeData);
+  }, [logs]);
+
+  useEffect(() => {
+    console.log('Logs passed to PerformanceChart:', logs); // Debugging log
+    console.log('Transformed Chart Data:', chartData); // Debugging log
+  }, [logs, chartData]);
+
   const CustomTooltip = ({ active, payload }: { active?: boolean; payload?: Array<{ payload: { day: string; hoursWorked: number; targetHours: number }; value?: number }>; }) => {
     if (active && payload && payload.length) {
       const first = payload[0];
@@ -65,7 +101,7 @@ export default function PerformanceChart() {
 
       <div className="h-80">
         <ResponsiveContainer width="100%" height="100%">
-          <LineChart data={data} margin={{ top: 5, right: 30, left: 20, bottom: 5 }}>
+          <LineChart data={chartData} margin={{ top: 5, right: 30, left: 20, bottom: 5 }}>
             <CartesianGrid strokeDasharray="3 3" stroke="#374151" />
             <XAxis 
               dataKey="day" 
@@ -96,21 +132,6 @@ export default function PerformanceChart() {
             />
           </LineChart>
         </ResponsiveContainer>
-      </div>
-
-      <div className="mt-6 grid grid-cols-3 gap-4 pt-6 border-t border-gray-800">
-        <div className="text-center">
-          <p className="text-2xl font-bold text-white mb-1">45</p>
-          <p className="text-xs text-gray-400 uppercase tracking-wider">Total Hours</p>
-        </div>
-        <div className="text-center">
-          <p className="text-2xl font-bold text-green-400 mb-1">106%</p>
-          <p className="text-xs text-gray-400 uppercase tracking-wider">Efficiency</p>
-        </div>
-        <div className="text-center">
-          <p className="text-2xl font-bold text-orange-400 mb-1">5</p>
-          <p className="text-xs text-gray-400 uppercase tracking-wider">Overtime Hrs</p>
-        </div>
       </div>
     </div>
   );
