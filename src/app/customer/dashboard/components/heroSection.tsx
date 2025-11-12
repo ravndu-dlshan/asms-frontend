@@ -78,16 +78,17 @@ const CustomerDashboardHero = () => {
         {/* Left Side */}
         <div className="flex-1 space-y-6 max-w-lg">
           <h1 className="text-5xl font-extrabold uppercase leading-tight">
-            Book Your Car <br />
-            <span className="text-orange-500">Service</span>
+          BOOK YOUR CUSTOM <br />
+            <span className="text-orange-500">CAR PROJECT</span>
           </h1>
           <p className="text-gray-400 text-base max-w-md">
-            Get your car service done from trusted and skilled professionals.
-            Experience the best quality and performance every time.
+          Bring your ideas — we’ll handle the rest. From concept to completion, get your car modified by skilled experts with precision and style.
           </p>
-          <Link href="/customer/customerAppoinments">
+
+          <Link href="/customer/customerAppoinments/">
+
             <button className="bg-orange-500 hover:bg-orange-600 text-white px-10 py-4 rounded-md font-semibold uppercase tracking-wide transition-all duration-300">
-              Book Online
+            START YOUR BUILD
             </button>
           </Link>
         </div>

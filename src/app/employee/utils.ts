@@ -42,6 +42,19 @@ export const formatCurrency = (amount: number): string => {
   }).format(amount);
 };
 
+export const formatCurrencyLKR = (amount: number): string => {
+  try {
+    return new Intl.NumberFormat('en-LK', {
+      style: 'currency',
+      currency: 'LKR',
+      minimumFractionDigits: 0,
+      maximumFractionDigits: 2
+    }).format(amount);
+  } catch {
+    return `LKR ${amount.toLocaleString('en-US', { minimumFractionDigits: 0, maximumFractionDigits: 2 })}`;
+  }
+};
+
 export const formatCurrencyCompact = (amount: number): string => {
   if (amount >= 1000000) {
     return `$${(amount / 1000000).toFixed(1)}M`;
@@ -386,7 +399,7 @@ export const removeFromLocalStorage = (key: string): void => {
 // EXPORT ALL
 // ============================================
 
-export default {
+const utils = {
   // Time
   formatTime,
   formatDate,
@@ -396,6 +409,7 @@ export default {
   // Currency
   formatCurrency,
   formatCurrencyCompact,
+  formatCurrencyLKR,
   
   // Calculations
   calculateSalary,
@@ -456,3 +470,5 @@ export default {
   getFromLocalStorage,
   removeFromLocalStorage
 };
+
+export default utils;
