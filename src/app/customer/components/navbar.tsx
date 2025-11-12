@@ -49,8 +49,13 @@ export default function Navbar() {
         // Clear auth cookies
         clearAuthCookies();
         
+        // Clear localStorage
+        if (typeof window !== 'undefined') {
+            localStorage.clear();
+        }
+        
         // Navigate to home page
-        router.replace('/customer');
+        router.replace('/');
     };
 
     const cancelLogout = () => {

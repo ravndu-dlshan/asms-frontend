@@ -35,7 +35,7 @@ const axiosInstance = axios.create({
 // Request interceptor
 axiosInstance.interceptors.request.use(
   (config) => {
-    const token = getCookie('authToken');
+    let token = getCookie('authToken');
     
     // Fallback to localStorage if cookie is not available
     if (!token && typeof window !== 'undefined') {

@@ -15,6 +15,7 @@ import {
   User,
 } from "lucide-react";
 import { getUserFromStorage } from "../utils/getUserFromCookies";
+import { clearAuthCookies } from "@/app/lib/cookies";
 
 interface MenuItem {
   href: string;
@@ -80,16 +81,14 @@ export default function Sidebar() {
 
   const handleLogout = () => {
     // Clear all auth cookies
-    document.cookie =
-      "accessToken=; path=/; expires=Thu, 01 Jan 1970 00:00:00 UTC;";
-    document.cookie =
-      "refreshToken=; path=/; expires=Thu, 01 Jan 1970 00:00:00 UTC;";
-    document.cookie =
-      "authToken=; path=/; expires=Thu, 01 Jan 1970 00:00:00 UTC;"; // Keep for backward compatibility
-    document.cookie =
-      "userInfo=; path=/; expires=Thu, 01 Jan 1970 00:00:00 UTC;";
-    document.cookie =
-      "userRole=; path=/; expires=Thu, 01 Jan 1970 00:00:00 UTC;";
+    clearAuthCookies();
+    
+    // Clear localStorage
+    if (typeof window !== 'undefined') {
+      localStorage.clear();
+    }
+    
+    // Navigate to home page
     router.push("/");
   };
 

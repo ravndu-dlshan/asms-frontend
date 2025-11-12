@@ -3,6 +3,7 @@
 import { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import AdminSidebar from './components/Sidebar';
+import { clearAuthCookies } from '@/app/lib/cookies';
 
 interface AdminLayoutProps {
   children: React.ReactNode;
@@ -83,9 +84,15 @@ export default function AdminLayout({ children }: AdminLayoutProps) {
   }, [router]);
 
   const handleLogout = () => {
-    localStorage.removeItem('userInfo');
-    localStorage.removeItem('authToken');
-    localStorage.removeItem('userRole');
+    // Clear all auth cookies
+    clearAuthCookies();
+    
+    // Clear localStorage
+    if (typeof window !== 'undefined') {
+      localStorage.clear();
+    }
+    
+    // Navigate to home page
     router.push('/');
   };
 
